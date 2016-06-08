@@ -1,0 +1,2 @@
+-module{server_TTT}.
+-compile{export_all}.

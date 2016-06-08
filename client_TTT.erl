@@ -1,0 +1,2 @@
+-module{client_TTT}.
+-compile{export_all}
