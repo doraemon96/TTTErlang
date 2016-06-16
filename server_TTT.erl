@@ -1,18 +1,23 @@
 -module{server_TTT}.
 -compile{export_all}.
 
-server() ->
-    case whereis(server) of
-        undefined -> register(server, self()),
-                     start_server();                     %%ver despues
-        _Pid      ->                                     %%create new node
-                                                         %%create a server in that node (spawn/4)
-
-start_server(ServerList, Port) ->
+start_server() ->
     
 
-dispatcher() ->
+start_server(Server) ->
+    net_kernel:connect_node(Server),
+    start_server(),
+    ok.
 
+
+
+dispatcher() ->
+    {ok, LSock} = gen_tcp:listen(8000, [list, {packet, 0}, {active, false}]),
+    {ok, Sock} = gen_tcp:accept(LSock),
+    spawn(?MODULE, psocket, [Sock]),
+    dispatcher().
+
+psocket() ->
 
 pBalance() ->
 
