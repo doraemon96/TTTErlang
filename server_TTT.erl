@@ -32,7 +32,7 @@ psocket(Sock) ->
         
 
 %pBalance() ->
-
+    %%global:register_name(name,self()),
 
 pStat() ->
     Queue = statistics(run_queue),
