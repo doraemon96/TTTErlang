@@ -23,6 +23,11 @@ pBalance() ->
 
 
 pStat() ->
-
+    Queue = statistics(run_queue),
+    {_, Reductions} = statistics(reductions),
+    %%TODO: Send statistics to all available nodes
+    [{pBalance, Node} ! {pstat, {Queue, Reductions}} || Node <- nodes()],
+    receive after 5000 -> ok end,
+    pStat().
 
 pCommand() ->
