@@ -2,27 +2,39 @@
 -compile{export_all}.
 
 start_server() ->
-    
+    Port = 8000, 
+    {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, false}]),
+    dispatcher(LSock).
+    %pStat(),
+    %pBalance().
 
 start_server(Server) ->
     net_kernel:connect_node(Server),
     start_server(),
     ok.
 
-
-
-dispatcher() ->
-    {ok, LSock} = gen_tcp:listen(8000, [list, {packet, 0}, {active, false}]),
+dispatcher(LSock) ->
     {ok, Sock} = gen_tcp:accept(LSock),
-    spawn(?MODULE, psocket, [Sock]),
-    dispatcher().
+    Pid= spawn(?MODULE, psocket, [Sock]),
+    ok = gen_tcp:controlling_process(Sock, Pid),
+    Pid ! ok,
+    dispatcher(LSock).
 
-psocket() ->
+psocket(Sock) ->
+    receive ok -> ok end,
+    ok = inet:setopts(Sock, [{active, true}]),
+    receive 
+        {tcp, Sock, Data} -> 
+            io:format("El mensaje que decía ~s~n", Data);
+        {_} -> 
+            io:format("Error en el mensaje")
+    end. 
+        
 
-pBalance() ->
+%pBalance() ->
 
 
-pStat() ->
+%pStat() ->
 
 
-pCommand() ->
+%pCommand() ->
