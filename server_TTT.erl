@@ -2,9 +2,9 @@
 -compile(export_all).
 
 start_server() ->
-    Port = 8000, 
-    {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, false}]),
+    {ok, LSock} = gen_tcp:listen(8000, [list, {packet, 4}, {active, false}]),
 
+    %%Registramos el nombre de los procesos pBalance y pStat 
     PidStat = spawn(?MODULE, pStat, []),
     PidBalance = spawn (?MODULE, pBalance, []),
     NameStat = "stat" ++ integer_to_list(erlang:length(nodes())),
@@ -16,7 +16,9 @@ start_server() ->
 
 start_server(Server) ->
     net_kernel:connect_node(Server),
+    {ok, LSock} = gen_tcp:listen(8000, [list, {packet, 4}, {active, false}]),
 
+    %%Registramos el nombre de los procesos pBalance y pStat 
     PidStat = spawn(?MODULE, pStat, []),
     PidBalance = spawn (?MODULE, pBalance, []),
     NameStat = "stat" ++ integer_to_list(erlang:length(nodes())),
@@ -24,12 +26,12 @@ start_server(Server) ->
     global:register_name(NameStat,PidStat),
     global:register_name(NameBalance,PidBalance),
 
-    start_server(),
+    dispatcher(LSock),
     ok.
 
 dispatcher(LSock) ->
     {ok, Sock} = gen_tcp:accept(LSock),
-    Pid= spawn(?MODULE, psocket, [Sock]),
+    Pid = spawn(?MODULE, psocket, [Sock]),
     ok = gen_tcp:controlling_process(Sock, Pid),
     Pid ! ok,
     dispatcher(LSock).
@@ -53,8 +55,12 @@ pBalance() ->
 pStat() ->
     Queue = statistics(run_queue),
     {_, Reductions} = statistics(reductions),
+
     %%TODO: Send statistics to all available nodes
-    [{pBalance, Node} ! {pstat, {Queue, Reductions}} || Node <- nodes()],
+    ListNumbers = lists:seq(0,erlang:length(nodes()) - 1),
+    ListBalances = lists:map((fun(X) -> "balance" ++ integer_to_list(X) end), ListNumbers), 
+    lists:map(fun(X) -> global:send(global:whereis_name(X), {pStat, {Queue, Reductions}, X}) end, ListBalances),
+
     receive after 5000 -> ok end,
     pStat().
 
