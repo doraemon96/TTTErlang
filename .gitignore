@@ -3,3 +3,4 @@
 *.o
 *.beam
 *.log
+*.swp
