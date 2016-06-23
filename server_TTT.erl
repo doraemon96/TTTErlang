@@ -12,21 +12,12 @@ start_server() ->
     global:register_name(NameStat,PidStat),
     global:register_name(NameBalance,PidBalance),
 
-    dispatcher(LSock).
+    dispatcher(LSock),
+    ok.
 
 start_server(Server) ->
     net_kernel:connect_node(Server),
-    {ok, LSock} = gen_tcp:listen(8000, [list, {packet, 4}, {active, false}]),
-
-    %%Registramos el nombre de los procesos pBalance y pStat 
-    PidStat = spawn(?MODULE, pStat, []),
-    PidBalance = spawn (?MODULE, pBalance, []),
-    NameStat = "stat" ++ integer_to_list(erlang:length(nodes())),
-    NameBalance = "balance" ++ integer_to_list(erlang:length(nodes())),
-    global:register_name(NameStat,PidStat),
-    global:register_name(NameBalance,PidBalance),
-
-    dispatcher(LSock),
+    start_server(),
     ok.
 
 dispatcher(LSock) ->
@@ -76,3 +67,4 @@ pCommand(Command, PlayerId, GameId) ->
 %        ["LEA", CmdId, GameId] ->
 %        ["BYE"] ->
         _ -> "ERROR not_implemented"
+    end.
