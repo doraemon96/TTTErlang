@@ -4,14 +4,15 @@
 start_server() ->
     Port = 8000, 
     {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, false}]),
-    dispatcher(LSock),
 
     PidStat = spawn(?MODULE, pStat, []),
     PidBalance = spawn (?MODULE, pBalance, []),
     NameStat = "stat" ++ integer_to_list(erlang:length(nodes())),
     NameBalance = "balance" ++ integer_to_list(erlang:length(nodes())),
     global:register_name(NameStat,PidStat),
-    global:register_name(NameBalance,PidBalance).
+    global:register_name(NameBalance,PidBalance),
+
+    dispatcher(LSock).
 
 start_server(Server) ->
     net_kernel:connect_node(Server),
@@ -44,7 +45,10 @@ psocket(Sock) ->
     end. 
         
 
-%pBalance() ->
+pBalance() ->
+    receive
+        X -> io:format("Llego~n",[])
+    end.
 
 pStat() ->
     Queue = statistics(run_queue),
