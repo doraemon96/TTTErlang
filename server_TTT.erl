@@ -27,7 +27,7 @@ dispatcher(LSock) ->
     Pid ! ok,
     dispatcher(LSock).
 
-psocket(Sock) ->
+pSocket(Sock) ->
     receive ok -> ok end,
     ok = inet:setopts(Sock, [{active, true}]),
     receive 
@@ -38,19 +38,35 @@ psocket(Sock) ->
     end. 
         
 
-pBalance() ->
+pBalance(Queue, Reductions, Node) ->
     receive
-        {pStat}
+        {pSocket, Pid} ->
+            Pid ! {pBalance, Node};
+
+        {pStat, {New_Queue, New_Reductions}, New_Node} ->
+            case Queue > New_Queue of
+                true -> pBalance(New_Queue, New_Reductions, New_Node);
+                false ->
+                    case Queue < New_Queue of 
+                        true -> pBalance(Queue, Reductions, Node);
+                        false ->
+                            case Reductions > New_Reductions of
+                                true -> pBalance(New_Queue, New_Reductions, New_Node);
+                                false -> pBalance(Queue, Reductions, Node)
+                            end
+                    end
+            end;
+
+        _ -> {error, not_supported}
     end.
 
 pStat() ->
     Queue = statistics(run_queue),
     {_, Reductions} = statistics(reductions),
 
-    %%TODO: Send statistics to all available nodes
     ListNumbers = lists:seq(0,erlang:length(nodes()) - 1),
     ListBalances = lists:map((fun(X) -> "balance" ++ integer_to_list(X) end), ListNumbers), 
-    lists:map(fun(X) -> global:send(global:whereis_name(X), {pStat, {Queue, Reductions}, X}) end, ListBalances),
+    lists:map(fun(X) -> global:send(global:whereis_name(X), {pStat, {Queue, Reductions}, node()}) end, ListBalances),
 
     receive after 5000 -> ok end,
     pStat().
