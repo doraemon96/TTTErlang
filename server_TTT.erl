@@ -43,4 +43,14 @@ pStat() ->
     pStat().
 
 
-%pCommand() ->
+pCommand(Command, PlayerId, GameId) ->
+    case string:tokens(Command," ") of
+%        ["CON", Nombre] ->
+%        ["LSG", CmdId] ->
+%        ["NEW", CmdId] ->
+%        ["ACC", CmdId, GameId] ->
+%        ["PLA", CmdId, GameId, Play] ->
+%        ["OBS", CmdId, GameId] ->
+%        ["LEA", CmdId, GameId] ->
+%        ["BYE"] ->
+        _ -> "ERROR not_implemented"
