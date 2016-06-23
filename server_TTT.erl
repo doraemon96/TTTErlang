@@ -70,3 +70,4 @@ pCommand(Command, PlayerId, GameId) ->
 %        ["LEA", CmdId, GameId] ->
 %        ["BYE"] ->
         _ -> "ERROR not_implemented"
+    end.
