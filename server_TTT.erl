@@ -5,12 +5,12 @@ start_server() ->
     {ok, LSock} = gen_tcp:listen(8000, [list, {packet, 4}, {active, false}]),
 
     %%Registramos el nombre de los procesos pBalance y pStat 
+    Queue = statistics(run_queue),
+    {_, Reductions} = statistics(reductions),
     PidStat = spawn(?MODULE, pStat, []),
-    PidBalance = spawn (?MODULE, pBalance, []),
-    NameStat = "stat" ++ integer_to_list(erlang:length(nodes())),
+    PidBalance = spawn (?MODULE, pBalance, [Queue, Reductions, node()]),
     NameBalance = "balance" ++ integer_to_list(erlang:length(nodes())),
-    global:register_name(NameStat,PidStat),
-    global:register_name(NameBalance,PidBalance),
+    global:register_name(NameBalance, PidBalance),
 
     dispatcher(LSock),
     ok.
@@ -64,8 +64,7 @@ pStat() ->
     Queue = statistics(run_queue),
     {_, Reductions} = statistics(reductions),
 
-    ListNumbers = lists:seq(0,erlang:length(nodes()) - 1),
-    ListBalances = lists:map((fun(X) -> "balance" ++ integer_to_list(X) end), ListNumbers), 
+    ListBalances = lists:filter(fun(X) -> lists:prefix("balance", X) end, global:registered_names()), 
     lists:map(fun(X) -> global:send(global:whereis_name(X), {pStat, {Queue, Reductions}, node()}) end, ListBalances),
 
     receive after 5000 -> ok end,
