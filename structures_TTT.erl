@@ -5,7 +5,7 @@
 
 
 create_game(nil, nil) -> 
-    {error, fields_undefined};
+    {error, not_supported};
 create_game(Player1, nil) ->
     %% Wait for Player2 to connect.
     receive
@@ -24,8 +24,8 @@ get_game_players(Game) ->
 
 set_game_table(Game, Table) ->
     case is_table_possible(get_game_table(Game), Table) of
-        True  -> Game#game{table = Table};
-        False -> {error, impossible_table}
+        true  -> Game#game{table = Table};
+        false -> {error, impossible_table}
     end.
 
 
