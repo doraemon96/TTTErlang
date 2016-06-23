@@ -32,7 +32,7 @@ psocket(Sock) ->
     ok = inet:setopts(Sock, [{active, true}]),
     receive 
         {tcp, Sock, Data} -> 
-            io:format("El mensaje que decía ~s~n", Data);
+            io:format("El mensaje que decía ~p~n", [Data]);
         {_} -> 
             io:format("Error en el mensaje")
     end. 
