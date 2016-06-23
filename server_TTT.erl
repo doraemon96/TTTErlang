@@ -49,7 +49,7 @@ psocket(Sock) ->
 
 pBalance() ->
     receive
-        X -> io:format("Llego~n",[])
+        {pStat}
     end.
 
 pStat() ->
