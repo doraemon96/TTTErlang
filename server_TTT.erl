@@ -1,15 +1,29 @@
--module{server_TTT}.
--compile{export_all}.
+-module(server_TTT).
+-compile(export_all).
 
 start_server() ->
     Port = 8000, 
     {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, false}]),
+
+    PidStat = spawn(?MODULE, pStat, []),
+    PidBalance = spawn (?MODULE, pBalance, []),
+    NameStat = "stat" ++ integer_to_list(erlang:length(nodes())),
+    NameBalance = "balance" ++ integer_to_list(erlang:length(nodes())),
+    global:register_name(NameStat,PidStat),
+    global:register_name(NameBalance,PidBalance),
+
     dispatcher(LSock).
-    %pStat(),
-    %pBalance().
 
 start_server(Server) ->
     net_kernel:connect_node(Server),
+
+    PidStat = spawn(?MODULE, pStat, []),
+    PidBalance = spawn (?MODULE, pBalance, []),
+    NameStat = "stat" ++ integer_to_list(erlang:length(nodes())),
+    NameBalance = "balance" ++ integer_to_list(erlang:length(nodes())),
+    global:register_name(NameStat,PidStat),
+    global:register_name(NameBalance,PidBalance),
+
     start_server(),
     ok.
 
@@ -31,8 +45,10 @@ psocket(Sock) ->
     end. 
         
 
-%pBalance() ->
-    %%global:register_name(name,self()),
+pBalance() ->
+    receive
+        X -> io:format("Llego~n",[])
+    end.
 
 pStat() ->
     Queue = statistics(run_queue),

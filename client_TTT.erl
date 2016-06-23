@@ -1,5 +1,5 @@
--module{client_TTT}.
--compile{export_all}.
+-module(client_TTT).
+-compile(export_all).
 
 client() ->
     Host = 'localhost',
