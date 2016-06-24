@@ -22,7 +22,7 @@ start_server(Server) ->
 
 dispatcher(LSock) ->
     {ok, Sock} = gen_tcp:accept(LSock),
-    Pid = spawn(?MODULE, psocket, [Sock]),
+    Pid = spawn(?MODULE, pSocket, [Sock]),
     ok = gen_tcp:controlling_process(Sock, Pid),
     Pid ! ok,
     dispatcher(LSock).
@@ -30,13 +30,15 @@ dispatcher(LSock) ->
 pSocket(Sock) ->
     receive ok -> ok end,
     ok = inet:setopts(Sock, [{active, true}]),
+    pSocket_loop(Sock).
+pSocket_loop(Sock) ->
     receive 
-        {tcp, Sock, Data} -> 
-            io:format("El mensaje que decía ~p~n", [Data]);
+        {tcp, Sock, Data} ->
+            io:format(pCommand(Data, 0, 0) ++ "~n"); %%Encontrar la forma de dar playerId y commandId
         {_} -> 
             io:format("Error en el mensaje")
-    end. 
-        
+    end,
+    pSocket_loop(Sock).    
 
 pBalance(Queue, Reductions, Node) ->
     receive
