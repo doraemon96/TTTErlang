@@ -12,7 +12,8 @@ start_server() ->
     NameBalance = "balance" ++ integer_to_list(erlang:length(nodes())),
     global:register_name(NameBalance, PidBalance),
 
-    dispatcher(LSock),
+    spawn(?MODULE, dispatcher,[LSock, PidBalance]),
+
     ok.
 
 start_server(Server) ->
@@ -20,22 +21,25 @@ start_server(Server) ->
     start_server(),
     ok.
 
-dispatcher(LSock) ->
+dispatcher(LSock, PidBalance) ->
     {ok, Sock} = gen_tcp:accept(LSock),
-    Pid = spawn(?MODULE, pSocket, [Sock]),
+    Pid = spawn(?MODULE, pSocket, [Sock, PidBalance]),
     ok = gen_tcp:controlling_process(Sock, Pid),
     Pid ! ok,
     dispatcher(LSock).
 
-pSocket(Sock) ->
+pSocket(Sock, PidBalance) ->
     receive ok -> ok end,
     ok = inet:setopts(Sock, [{active, true}]),
-    pSocket_loop(Sock).
+    pSocket_loop(Sock, PidBalance).
 
-pSocket_loop(Sock) ->
+pSocket_loop(Sock, PidBalance) ->
     receive 
         {tcp, Sock, Data} ->
-            io:format(pCommand(Data, 0, 0) ++ "~n"); %% Encontrar la forma de dar playerId y commandId
+            PidBalance ! {pSocket, self()},
+            receive
+                {pBalance, Node} -> spawn(Node, ?MODULE, pCommand, [Data, nil, nil, self()]),
+                _ -> {error, not_supported}
         {_} -> 
             io:format("Error en el mensaje")
     end,
@@ -83,9 +87,9 @@ pStat() ->
     pStat().
 
 
-pCommand(Command, PlayerId, GameId) ->
+pCommand(Command, PlayerId, GameId, PSocket) ->
     case string:tokens(Command," ") of
-%        ["CON", Nombre] ->
+        ["CON", Nombre] -> 
 %        ["LSG", CmdId] ->
 %        ["NEW", CmdId] ->
 %        ["ACC", CmdId, GameId] ->
