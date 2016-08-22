@@ -4,7 +4,7 @@
 start_server() ->
     {ok, LSock} = gen_tcp:listen(8000, [list, {packet, 4}, {active, false}]),
 
-    %%Registramos el nombre de los procesos pBalance y pStat 
+    %% Spawneamos y registramos el nombre de los procesos pBalance 
     Queue = statistics(run_queue),
     {_, Reductions} = statistics(reductions),
     PidStat = spawn(?MODULE, pStat, []),
@@ -12,7 +12,8 @@ start_server() ->
     NameBalance = "balance" ++ integer_to_list(erlang:length(nodes())),
     global:register_name(NameBalance, PidBalance),
 
-    dispatcher(LSock),
+    spawn(?MODULE, dispatcher,[LSock, PidBalance]),
+
     ok.
 
 start_server(Server) ->
@@ -20,31 +21,41 @@ start_server(Server) ->
     start_server(),
     ok.
 
-dispatcher(LSock) ->
+dispatcher(LSock, PidBalance) ->
     {ok, Sock} = gen_tcp:accept(LSock),
-    Pid = spawn(?MODULE, pSocket, [Sock]),
+    Pid = spawn(?MODULE, pSocket, [Sock, PidBalance]),
     ok = gen_tcp:controlling_process(Sock, Pid),
     Pid ! ok,
     dispatcher(LSock).
 
-pSocket(Sock) ->
+pSocket(Sock, PidBalance) ->
     receive ok -> ok end,
     ok = inet:setopts(Sock, [{active, true}]),
-    pSocket_loop(Sock).
-pSocket_loop(Sock) ->
+    pSocket_loop(Sock, PidBalance).
+
+pSocket_loop(Sock, PidBalance) ->
     receive 
         {tcp, Sock, Data} ->
-            io:format(pCommand(Data, 0, 0) ++ "~n"); %%Encontrar la forma de dar playerId y commandId
+            PidBalance ! {pSocket, self()},
+            receive
+                {pBalance, Node} -> spawn(Node, ?MODULE, pCommand, [Data, nil, nil, self()]),
+                _ -> {error, not_supported}
         {_} -> 
             io:format("Error en el mensaje")
     end,
     pSocket_loop(Sock).    
 
+%% pBalance funciona de la siguiente manera: tiene como argumento un nodo que es el de menor carga.
+%% Cuando recibe información de algún pStat compara si este nuevo nodo está menos cargado que el
+%% que ya tiene. En caso afirmativo, este pasa a ser el nuevo argumento de la función pBalance; caso
+%% contrario se vuelve a llamar con los mismos argumentos.
 pBalance(Queue, Reductions, Node) ->
     receive
+        %% Si recibimos un pedido de un psocket, le indicamos al nodo quien debe ejecutar el comando
         {pSocket, Pid} ->
             Pid ! {pBalance, Node};
 
+        %% Si recibimos información de un pstat, comparamos con el mejor postor que tenemos
         {pStat, {New_Queue, New_Reductions}, New_Node} ->
             case Queue > New_Queue of
                 true -> pBalance(New_Queue, New_Reductions, New_Node);
@@ -63,17 +74,20 @@ pBalance(Queue, Reductions, Node) ->
     end.
 
 pStat() ->
+    %% Obtenemos datos de carga
     Queue = statistics(run_queue),
     {_, Reductions} = statistics(reductions),
 
+    %% Enviamos datos de carga a todos los nodos
     ListBalances = lists:filter(fun(X) -> lists:prefix("balance", X) end, global:registered_names()), 
     lists:map(fun(X) -> global:send(global:whereis_name(X), {pStat, {Queue, Reductions}, node()}) end, ListBalances),
 
+    %% Esperamos 5 segundos para volver a enviar
     receive after 5000 -> ok end,
     pStat().
 
 
-pCommand(Command, PlayerId, GameId) ->
+pCommand(Command, PlayerId, GameId, PSocket) ->
     case string:tokens(Command," ") of
         ["CON", UserName] -> cmd_connect(UserName);
 %        ["LSG", CmdId] ->
