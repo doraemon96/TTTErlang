@@ -4,3 +4,5 @@
 *.beam
 *.log
 *.swp
+*.dump
+*.erl~
