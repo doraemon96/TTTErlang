@@ -75,7 +75,7 @@ pStat() ->
 
 pCommand(Command, PlayerId, GameId) ->
     case string:tokens(Command," ") of
-%        ["CON", Nombre] ->
+        ["CON", UserName] -> cmd_connect(UserName);
 %        ["LSG", CmdId] ->
 %        ["NEW", CmdId] ->
 %        ["ACC", CmdId, GameId] ->

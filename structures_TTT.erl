@@ -1,7 +1,7 @@
 -module(structs_TTT).
 -compile(export_all).
 
--record(game, {table = [[0,0,0],[0,0,0][0,0,0]], player1, player2}).
+-record(game, {table = [[0,0,0],[0,0,0],[0,0,0]], player1, player2}).
 
 
 create_game(nil, nil) -> 
@@ -30,3 +30,10 @@ set_game_table(Game, Table) ->
 
 
 is_table_possible(_,_) -> True.
+
+create_PList([]) ->
+    case erlang:length(nodes()) of 
+        1 -> receive {new_player, UserName} -> create_PList([UserName]) end;
+        _ -> receive {plist, UserName} -> ()
+create_PList(PList) ->
+   
