@@ -19,7 +19,7 @@ username_loop(Sock) ->
             {username, UserName};
         {tcp, Sock, invalid_username} ->
             io:format("Usuario en uso.~n"),
-            username_loop(Sock).
+            username_loop(Sock);
         _ -> {error, not_supported}
     end.
 
