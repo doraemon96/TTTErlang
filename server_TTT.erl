@@ -23,6 +23,7 @@ start_server(NodeName) ->
     PidBalance      = spawn (?MODULE, pBalance, [Queue, Reductions, node()]),
     NameBalance     = "balance" ++ integer_to_list(Number),
     global:register_name(NameBalance, PidBalance),
+    erlang:set_cookie(node(), 'erlangTTT'),
 
     spawn(?MODULE, dispatcher,[LSock, PidBalance]),
 
@@ -56,7 +57,8 @@ pSocket_loop(Sock, PidBalance) ->
         {tcp, Sock, Data} ->
             PidBalance ! {pSocket, self()},
             receive
-                {pBalance, Node} -> spawn(Node, ?MODULE, pCommand, [Data, nil, nil, self()]);
+                {pBalance, Node} ->
+                    spawn(Node, ?MODULE, pCommand, [Data, nil, nil, self()]);
                 _ -> {error, not_supported}
             end;
         {pCommand, Msg} ->
@@ -65,8 +67,7 @@ pSocket_loop(Sock, PidBalance) ->
                 invalid_username -> ok = gen_tcp:send(Sock, "invalid_username");
                 _ -> error
             end;
-        {_} -> 
-            io:format("Error en el mensaje")
+        _ -> io:format("Error en el mensaje~n")
     end,
     pSocket_loop(Sock, PidBalance).    
 
@@ -75,7 +76,6 @@ pSocket_loop(Sock, PidBalance) ->
 %% que ya tiene. En caso afirmativo, este pasa a ser el nuevo argumento de la función pBalance; caso
 %% contrario se vuelve a llamar con los mismos argumentos.
 pBalance(Queue, Reductions, Node) ->
-    io:format("~p~p~n",[Node, Reductions]),
     receive
         %% Si recibimos un pedido de un psocket, le indicamos al nodo quien debe ejecutar el comando
         {pSocket, Pid} ->
@@ -97,13 +97,13 @@ pBalance(Queue, Reductions, Node) ->
             end;
 
         _ -> {error, not_supported}
-    end.
+    end,
+    pBalance(Queue, Reductions, Node).
 
 pStat() ->
     %% Obtenemos datos de carga
     Queue = statistics(run_queue),
     {_, Reductions} = statistics(reductions),
-    io:format("~p~n",[Reductions]),
 
     %% Enviamos datos de carga a todos los nodos
     ListBalances = lists:filter(fun(X) -> lists:prefix("balance", X) end, global:registered_names()), 
@@ -115,6 +115,7 @@ pStat() ->
 
 
 pCommand(Command, PlayerId, GameId, PSocket) ->
+    io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
         ["CON", UserName] -> cmd_connect(UserName, PSocket);
 %        ["LSG", CmdId] ->
@@ -124,16 +125,15 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
 %        ["OBS", CmdId, GameId] ->
 %        ["LEA", CmdId, GameId] ->
 %        ["BYE"] ->
-        _ -> "ERROR not_implemented"
+        _ -> io:format("ERROR not_implemented~n"),
+             PSocket ! ok
     end.
 
 %% CAMBIAR ESTO 
 cmd_connect(Username, PSocket) ->
-    Check = [1,2,3], 
-
+    Check = [], 
     case Check of
         [] -> PSocket ! {pCommand, valid_username};  
         _  -> PSocket ! {pCommand, invalid_username}
     end,
-
     ok.
