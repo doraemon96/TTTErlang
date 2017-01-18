@@ -6,3 +6,6 @@ Project for "Sistemas Operativos I" (Operative Systems 1)
 
 #Levantar server
 
+Si es el primer nodo que se levanta para actuar como server, entonces se ejecuta start_server('node_name'); caso
+contrario, debe ejecutarse start_server('node_name','working_node').
+
