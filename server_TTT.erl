@@ -5,14 +5,13 @@
 %% iniciando un shell con las opciones -sname y -setcookie. Todos los nombres de nodos
 %% deben ser ingresados con comillas simples.
 %% Creamos el primer nodo servidor, por lo que solo necesitamos el nombre de dicho nodo.
-start_server(NodeName) ->
+start_server() ->
     Number = erlang:length(nodes()),
-    %io:format("~p~n",[Number]),
 
-    case Number > 0 of
-        false -> net_kernel:start([NodeName, shortnames]);
-        true  -> ok
-    end,
+    %case Number > 0 of
+    %    false -> net_kernel:start([NodeName, shortnames]);
+    %    true  -> ok
+    %end,
 
     {ok, LSock} = gen_tcp:listen(8000 + Number, [list, {packet, 4}, {active, false}]),
 
@@ -23,7 +22,6 @@ start_server(NodeName) ->
     PidBalance      = spawn (?MODULE, pBalance, [Queue, Reductions, node()]),
     NameBalance     = "balance" ++ integer_to_list(Number),
     global:register_name(NameBalance, PidBalance),
-    erlang:set_cookie(node(), 'erlangTTT'),
 
     spawn(?MODULE, dispatcher,[LSock, PidBalance]),
 
@@ -32,11 +30,11 @@ start_server(NodeName) ->
 %% Creamos los siguientes nodos que conformaran el servidor, por lo que necesitamos
 %% pasar como argumento el nombre de alguno de los otros servidores que ya se encuentran
 %% funcionando (segundo argumento), además del nombre del nodo a crear (primer argumento).
-start_server(NodeName, Server) ->
-    net_kernel:start([NodeName, shortnames]), 
+start_server(Server) ->
+    %net_kernel:start([NodeName, shortnames]), 
     net_kernel:connect_node(Server),
     receive after 1000 -> ok end,
-    start_server(NodeName),
+    start_server(),
     ok.
 
 %% Aceptamos la conexión, y partir de allí creamos un nuevo proceso psocket.
