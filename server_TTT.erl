@@ -5,7 +5,7 @@
 start_server() ->
     Number = erlang:length(nodes()),
 
-    {ok, LSock} = gen_tcp:listen(8000 + Number, [list, {packet, 4}, {active, false}]),
+    {ok, LSock} = gen_tcp:listen(8000 + Number, [list, {packet, 4}, {active, false}, {reuseaddr, true}]),
 
     %% Spawneamos y registramos el nombre de los procesos pBalance 
     Queue           = statistics(run_queue),
@@ -71,13 +71,13 @@ pBalance(Queue, Reductions, Node) ->
         %% Si recibimos información de un pstat, comparamos con el mejor postor que tenemos
         {pStat, {New_Queue, New_Reductions}, New_Node} ->
             case Queue > New_Queue of
-                true -> pBalance(New_Queue, New_Reductions, New_Node);
+                true  -> pBalance(New_Queue, New_Reductions, New_Node);
                 false ->
                     case Queue < New_Queue of 
-                        true -> pBalance(Queue, Reductions, Node);
+                        true  -> pBalance(Queue, Reductions, Node);
                         false ->
                             case Reductions > New_Reductions of
-                                true -> pBalance(New_Queue, New_Reductions, New_Node);
+                                true  -> pBalance(New_Queue, New_Reductions, New_Node);
                                 false -> pBalance(Queue, Reductions, Node)
                             end
                     end
@@ -89,7 +89,7 @@ pBalance(Queue, Reductions, Node) ->
 
 pStat() ->
     %% Obtenemos datos de carga
-    Queue = statistics(run_queue),
+    Queue           = statistics(run_queue),
     {_, Reductions} = statistics(reductions),
 
     %% Enviamos datos de carga a todos los nodos
@@ -102,6 +102,7 @@ pStat() ->
 
 
 pCommand(Command, PlayerId, GameId, PSocket) ->
+    io:format("Me crearon en el nodo ~p ~n", [node()]),
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
         ["CON", UserName] -> cmd_connect(UserName, PSocket);
