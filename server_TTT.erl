@@ -2,30 +2,43 @@
 -compile(export_all).
 
 %% Se inician todos los procesos inherentes al server 
-start_server() ->
-    %%FIXME: Si hay dos servidores y se cae el primero, un nuevo servidor se conectaria en el mismo numero que el ultimo.
-    %%       Ejemplo: sv1 escucha en 8000, sv2 escucha en 8001, sv1 se cae, sv3 escucha en 8001 (!!!) 
+start_server(Port) ->
     Number = erlang:length(nodes()),
 
-    {ok, LSock} = gen_tcp:listen(8000 + Number, [list, {packet, 4}, {active, false}, {reuseaddr, true}]),
+    {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, false}, {reuseaddr, true}]),
 
     %% Spawneamos y registramos el nombre de los procesos pBalance 
     Queue           = statistics(run_queue),
     {_, Reductions} = statistics(reductions),
-    PidStat         = spawn(?MODULE, pStat, []),
-    PidBalance      = spawn (?MODULE, pBalance, [Queue, Reductions, node()]),
+    PidStat         = spawn_link(?MODULE, pStat, []),
+    PidBalance      = spawn_link(?MODULE, pBalance, [Queue, Reductions, node()]),
     NameBalance     = "balance" ++ integer_to_list(Number),
     global:register_name(NameBalance, PidBalance),
 
-    spawn(?MODULE, dispatcher,[LSock, PidBalance]),
+    PidDispatcher = spawn_link(?MODULE, dispatcher,[LSock, PidBalance]),
+
+    process_flag(trap_exit, true),
+
+    receive
+        {'EXIT', _, Reason} -> 
+            exit(PidStat, Reason),
+            exit(PidBalance, Reason),
+            exit(PidDispatcher, Reason),
+            gen_tcp:close(LSock)
+    end, 
+
+    receive after 30000 -> ok end,
+
+    spawn(?MODULE, start_server, [Port]),
 
     ok.
 
 %% Se pasa como argumento el nombre de algún nodo que ya esté trabajando
-start_server(Server) ->
+%% y el puerto a donde va a escuchar
+start_server(Server, Port) ->
     net_kernel:connect_node(Server),
     receive after 1000 -> ok end,
-    start_server(),
+    start_server(Port),
     ok.
 
 %% Aceptamos la conexión, y partir de allí creamos un nuevo proceso psocket.
