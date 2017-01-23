@@ -3,6 +3,8 @@
 
 %% Se inician todos los procesos inherentes al server 
 start_server() ->
+    %%FIXME: Si hay dos servidores y se cae el primero, un nuevo servidor se conectaria en el mismo numero que el ultimo.
+    %%       Ejemplo: sv1 escucha en 8000, sv2 escucha en 8001, sv1 se cae, sv3 escucha en 8001 (!!!) 
     Number = erlang:length(nodes()),
 
     {ok, LSock} = gen_tcp:listen(8000 + Number, [list, {packet, 4}, {active, false}, {reuseaddr, true}]),
@@ -54,6 +56,8 @@ pSocket_loop(Sock, PidBalance) ->
                 invalid_username -> ok = gen_tcp:send(Sock, "invalid_username");
                 _ -> error
             end;
+        {tcp_closed, Socket} ->
+                io:format("El usuario se ha desconectado~n");
         _ -> io:format("Error en el mensaje~n")
     end,
     pSocket_loop(Sock, PidBalance).    
