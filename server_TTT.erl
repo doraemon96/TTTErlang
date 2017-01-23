@@ -15,7 +15,11 @@ start_server(Port) ->
     NameBalance     = "balance" ++ integer_to_list(Number),
     global:register_name(NameBalance, PidBalance),
 
-    PidDispatcher = spawn_link(?MODULE, dispatcher,[LSock, PidBalance]),
+    PidDispatcher = spawn_link(?MODULE, dispatcher, [LSock, PidBalance]),
+
+    PidNamer  = spawn_link(?MODULE, namer, []),
+    NameNamer = "namer" ++ integer_to_list(Number), 
+    global:register_name(NameNamer, PidNamer),
 
     process_flag(trap_exit, true),
 
@@ -40,6 +44,11 @@ start_server(Server, Port) ->
     receive after 1000 -> ok end,
     start_server(Port),
     ok.
+
+%% Lleva una lista con todos los nombres de usuarios registrados
+namer(Names) ->    
+    receive
+        {Pid, Username} ->
 
 %% Aceptamos la conexión, y partir de allí creamos un nuevo proceso psocket.
 dispatcher(LSock, PidBalance) ->

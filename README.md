@@ -13,3 +13,7 @@ en este trabajo es aaa).
 Si es el primer nodo que se levanta para actuar como server, entonces se ejecuta spawn(server_TTT, start_server, [port]); caso
 contrario, debe ejecutarse start_server(server_TTT, start_server, ['working_node', port]).
 
+#Conectar cliente
+Debe tenerse conocimiento de la dirección ip de un server (server principal) que esté escuchando en el puerto 8000,
+y acto seguido se ejecuta client("ip_host").
+
