@@ -1,9 +1,8 @@
 -module(client_TTT).
 -compile(export_all).
 
-client() ->
-    Host = "localhost",
-    {ok , Sock} = gen_tcp:connect(Host, 8002, [binary, {packet, 4}]),
+client(Host) ->
+    {ok , Sock} = gen_tcp:connect(Host, 8000, [binary, {packet, 4}]),
     case username_loop(Sock) of
         {username, UserName} -> ok;
         _ -> {error, not_supported}
