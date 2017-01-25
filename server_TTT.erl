@@ -67,14 +67,6 @@ start_server(Port) ->
 
     ok.
 
-%% Se pasa como argumento el nombre de algún nodo que ya esté trabajando
-%% y el puerto a donde va a escuchar
-start_server(Server, Port) ->
-    net_kernel:connect_node(Server),
-    receive after 1000 -> ok end,
-    start_server(Port),
-    ok.
-
 %% Aceptamos la conexión, y partir de allí creamos un nuevo proceso psocket.
 dispatcher(LSock, PidBalance) ->
     {ok, Sock} = gen_tcp:accept(LSock),
