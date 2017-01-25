@@ -51,7 +51,7 @@ init(Port, Node) ->
 start_server(Port) ->
     Number = erlang:length(nodes()),
 
-    {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, false}, {reuseaddr, true}]),
+    {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, true}, {reuseaddr, true}]),
 
     %% Spawneamos y registramos el nombre de los procesos pBalance 
     Queue           = statistics(run_queue),
@@ -103,7 +103,7 @@ pSocket_loop(Sock, PidBalance) ->
             end;
         {pCommand, Msg} ->
             case Msg of
-                valid_username   -> ok = gen_tcp:send(Sock, "valid_username");
+                valid_username  -> ok = gen_tcp:send(Sock, "valid_username");
                 invalid_username -> ok = gen_tcp:send(Sock, "invalid_username");
                 _ -> error
             end;
@@ -178,7 +178,9 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
 cmd_connect(UserName, PSocket) ->
     case exists_username(UserName) of
         true  -> PSocket ! {pCommand, invalid_username}; 
-        false -> PSocket ! {pCommand, valid_username}
+        false ->
+            add_username(UserName), 
+            PSocket ! {pCommand, valid_username}
     end,
     ok. 
 
