@@ -1,5 +1,6 @@
 -module(server_TTT).
 -compile(export_all).
+%-include("commands_TTT.erl").
 
 -record(user, {name,
                empty}).
@@ -13,9 +14,20 @@ add_username(UName) ->
         end,
     mnesia:activity(transaction, F).
 
-%% get_username(UName) ->
+exists_username(UName) ->
+    F = fun() ->
+            case mnesia:read({user, UName}) of 
+                [] -> false;
+                _  -> true
+            end
+        end,
+    mnesia:activity(transaction, F). 
 
-%% delete_username(UName) ->
+delete_username(UName) ->
+    F = fun() ->
+            mnesia:delete({user, UName})
+        end,
+    mnesia:activity(transaction, F).
 
 init(Port) -> 
     mnesia:create_schema([node()]),
