@@ -1,4 +1,4 @@
--module(structures_TTT).
+-module(gametable_TTT).
 -compile(export_all).
 
 -record(game, {table = [[0,0,0],[0,0,0],[0,0,0]], player1, player2}).
@@ -62,7 +62,19 @@ table_checksuperpos(TableIn, TableOut) ->
     lists:all(fun(X) -> X end, Fea).
 
 
-%% TODO: get_game_status muestra si el juego fue ganado o sigue en progreso
+%% get_game_status muestra si el juego fue ganado o sigue en progreso
 get_game_status(Game) ->
-    ok.
+    Table = get_game_table(Game),
+    table_checkrow(Table) or table_checkcol(Table) or table_checkdiagonal(Table).
 
+table_checkrow(Table) ->
+    Fea = lists:foreach(fun(X) -> (lists:nth(1,X) == lists:nth(2,X)) and (lists:nth(2,X) == lists:nth(3,X)) end, Table),
+    lists:any(fun(X) -> X end, Fea).
+table_checkcol(Table) ->
+    Zip = lists:zip(lists:nth(1,Table), lists:nth(2,Table), lists:nth(3,Table)),
+    Fea = lists:foreach(fun(X) -> (element(1,X) == element(2,X)) and (element(2,X) == element(3,X)) end),
+    lists:any(fun(X) -> X end, Fea).
+table_checkdiagonal(Table) ->
+    Diag1 = (element(1, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(3, lists(nth(3,Table)))),
+    Diag2 = (element(3, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(1, lists(nth(3,Table)))),
+    Diag1 or Diag2.
