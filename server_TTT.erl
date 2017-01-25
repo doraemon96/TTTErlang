@@ -1,8 +1,30 @@
 -module(server_TTT).
 -compile(export_all).
+-include_lib("stdlib/include/qlc.hrl").
+
+-record(user, {name}).
+
+%% *************************************************************** %%
+%% ***** Funciones para agregar o quitar de la base de datos ***** %%
+%% *************************************************************** %%
+add_username(UName) ->
+    F = fun() ->
+            mnesia:write(#user{name=UName})
+        end,
+    mnesia:activity(transaction, F).
+
+%% get_username(UName) ->
+
+%% delete_username(UName) ->
 
 %% Se inician todos los procesos inherentes al server 
 start_server(Port) ->
+    io:format("~p ~n", [record_info(fields, user)]),
+
+    mnesia:create_schema([node()]),
+    mnesia:start(),   
+    mnesia:create_table(user, [{attributes, record_info(fields, user)}]),
+
     Number = erlang:length(nodes()),
 
     {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, false}, {reuseaddr, true}]),
@@ -16,10 +38,6 @@ start_server(Port) ->
     global:register_name(NameBalance, PidBalance),
 
     PidDispatcher = spawn_link(?MODULE, dispatcher, [LSock, PidBalance]),
-
-    PidNamer  = spawn_link(?MODULE, namer, []),
-    NameNamer = "namer" ++ integer_to_list(Number), 
-    global:register_name(NameNamer, PidNamer),
 
     process_flag(trap_exit, true),
 
@@ -44,11 +62,6 @@ start_server(Server, Port) ->
     receive after 1000 -> ok end,
     start_server(Port),
     ok.
-
-%% Lleva una lista con todos los nombres de usuarios registrados
-namer(Names) ->    
-    receive
-        {Pid, Username} ->
 
 %% Aceptamos la conexión, y partir de allí creamos un nuevo proceso psocket.
 dispatcher(LSock, PidBalance) ->
