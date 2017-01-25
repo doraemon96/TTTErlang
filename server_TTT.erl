@@ -1,8 +1,8 @@
 -module(server_TTT).
 -compile(export_all).
--include_lib("stdlib/include/qlc.hrl").
 
--record(user, {name}).
+-record(user, {name,
+               empty}).
 
 %% *************************************************************** %%
 %% ***** Funciones para agregar o quitar de la base de datos ***** %%
@@ -17,14 +17,26 @@ add_username(UName) ->
 
 %% delete_username(UName) ->
 
-%% Se inician todos los procesos inherentes al server 
-start_server(Port) ->
-    io:format("~p ~n", [record_info(fields, user)]),
-
+init(Port) -> 
     mnesia:create_schema([node()]),
     mnesia:start(),   
-    mnesia:create_table(user, [{attributes, record_info(fields, user)}]),
+    mnesia:create_table(user, [{attributes, record_info(fields, user)}, {disc_copies, [node()]}]),
+    spawn(?MODULE, start_server, [Port]),
+    ok.
 
+init(Port, Node) ->
+    rpc:call(Node, mnesia, change_config, [extra_db_nodes, [node()]]),
+    mnesia:change_table_copy_type(schema, node(), disc_copies),
+    mnesia:add_table_copy(user, node(), disc_copies),
+    spawn(?MODULE, start_server, [Port]),
+    ok.
+
+%% *************************************************************** %%
+%% ******************** Funciones del server ********************* %%
+%% *************************************************************** %%
+
+%% Se inician todos los procesos inherentes al server 
+start_server(Port) ->
     Number = erlang:length(nodes()),
 
     {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, false}, {reuseaddr, true}]),
