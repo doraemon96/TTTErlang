@@ -172,11 +172,21 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
              PSocket ! ok
     end.
 
-%% CAMBIAR ESTO 
-cmd_connect(Username, PSocket) ->
-    Check = [], 
-    case Check of
-        [] -> PSocket ! {pCommand, valid_username};  
-        _  -> PSocket ! {pCommand, invalid_username}
+%% *************************************************************** %%
+%% ******************** Comandos del cliente ********************* %%
+%% *************************************************************** %%
+cmd_connect(UserName, PSocket) ->
+    case exists_username(UserName) of
+        true  -> PSocket ! {pCommand, invalid_username}; 
+        false -> PSocket ! {pCommand, valid_username}
     end,
-    ok.
+    ok. 
+
+%% CAMBIAR ESTO 
+%%cmd_connect(Username, PSocket) ->
+%%    Check = [], 
+%%    case Check of
+%%        [] -> PSocket ! {pCommand, valid_username};  
+%%        _  -> PSocket ! {pCommand, invalid_username}
+%%    end,
+%%    ok.
