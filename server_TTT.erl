@@ -5,6 +5,11 @@
 -record(user, {name,
                empty}).
 
+%% Si vamos a hacer un spawn por cada partida ¿Por qué no usar el pid ya que este es único?
+-record(game, {user1,
+               user2,
+               gameid}). 
+
 %% *************************************************************** %%
 %% ***** Funciones para agregar o quitar de la base de datos ***** %%
 %% *************************************************************** %%
