@@ -126,7 +126,7 @@ pSocket_loop(Sock, PidBalance) ->
                 valid_username   -> ok = gen_tcp:send(Sock, "valid_username");
                 invalid_username -> ok = gen_tcp:send(Sock, "invalid_username");
                 {lsg, Gl}        -> ok = gen_tcp:send(Sock, "lsg"),
-                                    ok = foreach(fun(X) -> ok = gen_tcp:send(Sock, term_to_binary(X)) end, Gl),
+                                    ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, term_to_binary(X)) end, Gl),
                                     ok = gen_tcp:send(Sock, "end");
                 _ -> error
             end;
@@ -187,11 +187,11 @@ pStat() ->
 
 
 pCommand(Command, PlayerId, GameId, PSocket) ->
-    io:format("Me crearon en el nodo ~p ~n", [node()]),
+    %io:format("Me crearon en el nodo ~p ~n", [node()]),
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
         ["CON", UserName] -> cmd_connect(UserName, PSocket);
-        ["LSG", CmdId]    -> cmd_lsg(PSocket, 0);
+        ["LSG"]           -> cmd_lsg(PSocket, 0);
 %        ["NEW", CmdId] ->
 %        ["ACC", CmdId, GameId] ->
 %        ["PLA", CmdId, GameId, Play] ->
