@@ -231,4 +231,9 @@ cmd_lsg(PSocket, CmdId) ->
     ok.
 
 cmd_new(PSocket) ->
-    ok.    
+    F = fun() -> 
+          Handle = qlc:q([P#game.gameid || P <- mnesia:table(game)]),
+          qlc:e(Handle)
+        end,
+    Max = lists:max(mnesia:activity(transaction, F)),
+    spawn(?MODULE).
