@@ -1,15 +1,16 @@
 -module(server_TTT).
 -compile(export_all).
+-include_lib("stdlib/include/qlc.hrl").
+%-include_lib("stdlib/include/mnemosyne.hrl").
 %-include("commands_TTT.erl").
 
 -record(user, {name,
                empty}).
 
 %% Si vamos a hacer un spawn por cada partida ¿Por qué no usar el pid ya que este es único?
--record(game, {user1,
-               user2,
-               gameid,
-               status}). 
+-record(game, {gameid,
+               user1,
+               user2 = "*waiting*"}). 
 
 %% *************************************************************** %%
 %% ***** Funciones para agregar o quitar de la base de datos ***** %%
@@ -38,14 +39,20 @@ delete_username(UName) ->
 
 %% Listar todos los juegos
 list_games() ->
-    F = fun() ->
-            CatchAll = [{'_',[],['$_']}],
-            mnesia:select(user, CatchAll)
+    F = fun() -> 
+          Handle = qlc:q([P || P <- mnesia:table(game)]),
+          qlc:e(Handle)
         end,
     mnesia:activity(transaction, F).
 
 %% Manipular juegos
-%create_game()
+create_game(GameId, UName1, UName2) ->
+    F = fun() ->
+            mnesia:write(#game{gameid=GameId,
+                               user1=UName1,
+                               user2=UName2})
+        end,
+    mnesia:activity(transaction, F).
 
 init(Port) -> 
     mnesia:create_schema([node()]),
@@ -126,7 +133,8 @@ pSocket_loop(Sock, PidBalance) ->
                 valid_username   -> ok = gen_tcp:send(Sock, "valid_username");
                 invalid_username -> ok = gen_tcp:send(Sock, "invalid_username");
                 {lsg, Gl}        -> ok = gen_tcp:send(Sock, "lsg"),
-                                    ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, term_to_binary(X)) end, Gl),
+                                    %ok = gen_tcp:send(Sock, Gl),
+                                    ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
                                     ok = gen_tcp:send(Sock, "end");
                 _ -> error
             end;
@@ -213,9 +221,14 @@ cmd_connect(UserName, PSocket) ->
             PSocket ! {pCommand, valid_username}
     end,
     ok. 
+
 cmd_lsg(PSocket, CmdId) ->
     GamesList  = list_games(),
-    GamesList2 = lists:foreach(term_to_binary, GamesList),
-    PSocket ! {lsg, GamesList2},
+    GamesList2 = lists:map(fun({_ ,X, Y, Z}) -> erlang:integer_to_list(X) ++ " " 
+                                                ++ Y ++ " " 
+                                                ++ Z end, GamesList),
+    PSocket ! {pCommand, {lsg, GamesList2}},
     ok.
-    
+
+cmd_new(PSocket) ->
+    ok.    

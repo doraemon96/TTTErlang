@@ -26,8 +26,12 @@ client_loop(Sock) ->
     Data = string:strip(io:get_line("Comando: "), right, $\n),
     ok = gen_tcp:send(Sock, Data),
     receive
-        {tcp, Sock, "lsg"} -> lsg_loop(Sock);
-        _ -> io:format("Comando no implementado")
+        {tcp, Sock, "lsg"} -> io:format(string:centre("Game ID", 22), []),
+                              io:format(string:centre("Player 1", 22), []),
+                              io:format(string:centre("Player 2", 22), []),
+                              io:format("~n", []),
+                              lsg_loop(Sock);
+        _ -> io:format("Comando no implementado ~n")
     end,
     %ok = gen_tcp:close(Sock).
     client_loop(Sock).
@@ -39,7 +43,11 @@ client_loop(Sock) ->
 lsg_loop(Sock) ->
     receive
         {tcp, Sock, "end"} -> ok;
-        {tcp, Sock, Tuple} -> io:format("~p~n", [binary_to_term(Tuple)]),
-                              lsg_loop(Sock)
+        {tcp, Sock, List} -> Data = string:tokens(List, " "),
+                             lists:foreach(fun(X) -> io:format(string:centre(X, 22), []) end, Data),
+                             io:format("~n", []),
+                             lsg_loop(Sock);
+        _ -> io:format("WTH? ~n"),
+             lsg_loop(Sock)
     end,
     ok.
