@@ -23,7 +23,7 @@ username_loop(Sock) ->
     end.
 
 client_loop(Sock) -> 
-    Data = string:strip(io:get_line("Comando:"), right, $\n),
+    Data = string:strip(io:get_line("Comando: "), right, $\n),
     ok = gen_tcp:send(Sock, Data),
     receive
         {tcp, Sock, "lsg"} -> lsg_loop(Sock);
@@ -41,5 +41,5 @@ lsg_loop(Sock) ->
         {tcp, Sock, "end"} -> ok;
         {tcp, Sock, Tuple} -> io:format("~p~n", [binary_to_term(Tuple)]),
                               lsg_loop(Sock)
-    end
+    end,
     ok.
