@@ -26,10 +26,20 @@ client_loop(Sock) ->
     Data = string:strip(io:get_line("Comando:"), right, $\n),
     ok = gen_tcp:send(Sock, Data),
     receive
-        {tcp, Sock, "lsg"} -> 
-            receive
-                {tcp, Sock, GamesList} -> io:format("~p ~n", [GamesList])
-            end
+        {tcp, Sock, "lsg"} -> lsg_loop(Sock);
+        _ -> io:format("Comando no implementado")
     end,
     %ok = gen_tcp:close(Sock).
     client_loop(Sock).
+
+
+%%
+%%
+%%
+lsg_loop(Sock) ->
+    receive
+        {tcp, Sock, "end"} -> ok;
+        {tcp, Sock, Tuple} -> io:format("~p~n", [binary_to_term(Tuple)]),
+                              lsg_loop(Sock)
+    end
+    ok.
