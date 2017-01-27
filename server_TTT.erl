@@ -40,7 +40,7 @@ delete_username(UName) ->
 list_games() ->
     F = fun() ->
             CatchAll = [{'_',[],['$_']}],
-            mnesia:dirty_select(game, CatchAll)
+            mnesia:select(user, CatchAll)
         end,
     mnesia:activity(transaction, F).
 
@@ -125,15 +125,23 @@ pSocket_loop(Sock, PidBalance) ->
             case Msg of
                 valid_username   -> ok = gen_tcp:send(Sock, "valid_username");
                 invalid_username -> ok = gen_tcp:send(Sock, "invalid_username");
-                lsg              -> ok = gen_tcp:send(Sock, "lsg"),
-                                    ok = gen_tcp:send(Sock, list_games());
+                {lsg, Gl}        -> ok = gen_tcp:send(Sock, "lsg"),
+                                    ok = foreach(fun(X) -> ok = gen_tcp:send(Sock, term_to_binary(X)) end, Gl),
+                                    ok = gen_tcp:send(Sock, "end");
                 _ -> error
             end;
         {tcp_closed, Socket} ->
                 io:format("El usuario se ha desconectado~n");
         _ -> io:format("Error en el mensaje~n")
     end,
-    pSocket_loop(Sock, PidBalance).    
+    pSocket_loop(Sock, PidBalance). 
+
+%%send_list_tcp(Sock, [H | T]) ->
+%%    case T of
+%%    [] -> ok= 
+%%    ok = gen_tcp:send(Sock, term_to_binary(H)),
+%%    send_list_tcp(T).
+   
 
 %% pBalance funciona de la siguiente manera: tiene como argumento un nodo que es el de menor carga.
 %% Cuando recibe información de algún pStat compara si este nuevo nodo está menos cargado que el
@@ -183,7 +191,7 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
         ["CON", UserName] -> cmd_connect(UserName, PSocket);
-        ["LSG"]           -> PSocket ! {pCommand, lsg};
+        ["LSG", CmdId]    -> cmd_lsg(PSocket, 0);
 %        ["NEW", CmdId] ->
 %        ["ACC", CmdId, GameId] ->
 %        ["PLA", CmdId, GameId, Play] ->
@@ -205,4 +213,9 @@ cmd_connect(UserName, PSocket) ->
             PSocket ! {pCommand, valid_username}
     end,
     ok. 
-
+cmd_lsg(PSocket, CmdId) ->
+    GamesList  = list_games(),
+    GamesList2 = lists:foreach(term_to_binary, GamesList),
+    PSocket ! {lsg, GamesList2},
+    ok.
+    
