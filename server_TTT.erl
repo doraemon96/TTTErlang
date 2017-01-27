@@ -8,11 +8,13 @@
 %% Si vamos a hacer un spawn por cada partida ¿Por qué no usar el pid ya que este es único?
 -record(game, {user1,
                user2,
-               gameid}). 
+               gameid,
+               status}). 
 
 %% *************************************************************** %%
 %% ***** Funciones para agregar o quitar de la base de datos ***** %%
 %% *************************************************************** %%
+%% Registro de username
 add_username(UName) ->
     F = fun() ->
             mnesia:write(#user{name=UName})
@@ -34,10 +36,22 @@ delete_username(UName) ->
         end,
     mnesia:activity(transaction, F).
 
+%% Listar todos los juegos
+list_games() ->
+    F = fun() ->
+            CatchAll = [{'_',[],['$_']}],
+            mnesia:dirty_select(game, CatchAll)
+        end,
+    mnesia:activity(transaction, F).
+
+%% Manipular juegos
+%create_game()
+
 init(Port) -> 
     mnesia:create_schema([node()]),
     mnesia:start(),   
     mnesia:create_table(user, [{attributes, record_info(fields, user)}, {disc_copies, [node()]}]),
+    mnesia:create_table(game, [{attributes, record_info(fields, game)}, {disc_copies, [node()]}]),
     spawn(?MODULE, start_server, [Port]),
     ok.
 
@@ -45,6 +59,7 @@ init(Port, Node) ->
     rpc:call(Node, mnesia, change_config, [extra_db_nodes, [node()]]),
     mnesia:change_table_copy_type(schema, node(), disc_copies),
     mnesia:add_table_copy(user, node(), disc_copies),
+    mnesia:add_table_copy(game, node(), disc_copies),
     spawn(?MODULE, start_server, [Port]),
     ok.
 
@@ -108,8 +123,10 @@ pSocket_loop(Sock, PidBalance) ->
             end;
         {pCommand, Msg} ->
             case Msg of
-                valid_username  -> ok = gen_tcp:send(Sock, "valid_username");
+                valid_username   -> ok = gen_tcp:send(Sock, "valid_username");
                 invalid_username -> ok = gen_tcp:send(Sock, "invalid_username");
+                lsg              -> ok = gen_tcp:send(Sock, "lsg"),
+                                    ok = gen_tcp:send(Sock, list_games());
                 _ -> error
             end;
         {tcp_closed, Socket} ->
@@ -166,7 +183,7 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
         ["CON", UserName] -> cmd_connect(UserName, PSocket);
-%        ["LSG", CmdId] ->
+        ["LSG"]           -> PSocket ! {pCommand, lsg};
 %        ["NEW", CmdId] ->
 %        ["ACC", CmdId, GameId] ->
 %        ["PLA", CmdId, GameId, Play] ->
@@ -189,11 +206,3 @@ cmd_connect(UserName, PSocket) ->
     end,
     ok. 
 
-%% CAMBIAR ESTO 
-%%cmd_connect(Username, PSocket) ->
-%%    Check = [], 
-%%    case Check of
-%%        [] -> PSocket ! {pCommand, valid_username};  
-%%        _  -> PSocket ! {pCommand, invalid_username}
-%%    end,
-%%    ok.

@@ -25,5 +25,11 @@ username_loop(Sock) ->
 client_loop(Sock) -> 
     Data = string:strip(io:get_line("Comando:"), right, $\n),
     ok = gen_tcp:send(Sock, Data),
+    receive
+        {tcp, Sock, "lsg"} -> 
+            receive
+                {tcp, Sock, GamesList} -> io:format("~p ~n", [GamesList])
+            end
+    end,
     %ok = gen_tcp:close(Sock).
     client_loop(Sock).
