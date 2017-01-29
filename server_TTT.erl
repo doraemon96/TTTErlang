@@ -8,9 +8,9 @@
                empty}).
 
 %% Si vamos a hacer un spawn por cada partida ¿Por qué no usar el pid ya que este es único?
--record(game, {gameid,
-               user1,
-               user2 = "*waiting*"}). 
+-record(db_game, {gameid,
+                  user1,
+                  user2 = "*waiting*"}). 
 
 %% *************************************************************** %%
 %% ***** Funciones para agregar o quitar de la base de datos ***** %%
@@ -40,7 +40,7 @@ delete_username(UName) ->
 %% Listar todos los juegos
 list_games() ->
     F = fun() -> 
-          Handle = qlc:q([P || P <- mnesia:table(game)]),
+          Handle = qlc:q([P || P <- mnesia:table(db_game)]),
           qlc:e(Handle)
         end,
     mnesia:activity(transaction, F).
@@ -48,7 +48,7 @@ list_games() ->
 %% Manipular juegos
 create_game(GameId, UName1, UName2) ->
     F = fun() ->
-            mnesia:write(#game{gameid=GameId,
+            mnesia:write(#db_game{gameid=GameId,
                                user1=UName1,
                                user2=UName2})
         end,
@@ -58,7 +58,7 @@ init(Port) ->
     mnesia:create_schema([node()]),
     mnesia:start(),   
     mnesia:create_table(user, [{attributes, record_info(fields, user)}, {disc_copies, [node()]}]),
-    mnesia:create_table(game, [{attributes, record_info(fields, game)}, {disc_copies, [node()]}]),
+    mnesia:create_table(db_game, [{attributes, record_info(fields, db_game)}, {disc_copies, [node()]}]),
     spawn(?MODULE, start_server, [Port]),
     ok.
 
@@ -66,7 +66,7 @@ init(Port, Node) ->
     rpc:call(Node, mnesia, change_config, [extra_db_nodes, [node()]]),
     mnesia:change_table_copy_type(schema, node(), disc_copies),
     mnesia:add_table_copy(user, node(), disc_copies),
-    mnesia:add_table_copy(game, node(), disc_copies),
+    mnesia:add_table_copy(db_game, node(), disc_copies),
     spawn(?MODULE, start_server, [Port]),
     ok.
 
@@ -232,7 +232,7 @@ cmd_lsg(PSocket, CmdId) ->
 
 cmd_new(PSocket) ->
     F = fun() -> 
-          Handle = qlc:q([P#game.gameid || P <- mnesia:table(game)]),
+          Handle = qlc:q([P#db_game.gameid || P <- mnesia:table(db_game)]),
           qlc:e(Handle)
         end,
     Max = lists:max(mnesia:activity(transaction, F)),
