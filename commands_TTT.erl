@@ -10,7 +10,7 @@ cmd_con(UserName, PSocket) ->
         true  -> PSocket ! {pCommand, invalid_username}; 
         false ->
             add_username(UserName), 
-            PSocket ! {pCommand, valid_username}
+            PSocket ! {pCommand, {valid_username, UserName}}
     end,
     ok.
 
@@ -35,7 +35,9 @@ cmd_new(PSocket) ->
           qlc:e(Handle)
         end,
     Max = lists:max(mnesia:activity(transaction, F)),
-    spawn(?MODULE).
+    ok.
+    %create_game(Max + 1, UName). 
+    
 
 %% ACC
 %%

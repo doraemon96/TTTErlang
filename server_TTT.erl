@@ -53,32 +53,33 @@ dispatcher(LSock, PidBalance) ->
 pSocket(Sock, PidBalance) ->
     receive ok -> ok end,
     ok = inet:setopts(Sock, [{active, true}]),
-    pSocket_loop(Sock, PidBalance).
+    pSocket_loop(Sock, PidBalance, nil).
 
-pSocket_loop(Sock, PidBalance) ->
+pSocket_loop(Sock, PidBalance, UserName) ->
+    io:format("User: ~p~n", [UserName]),
     receive 
         {tcp, Sock, Data} ->
             PidBalance ! {pSocket, self()},
             receive
                 {pBalance, Node} ->
-                    spawn(Node, ?MODULE, pCommand, [Data, nil, nil, self()]);
+                    spawn(Node, ?MODULE, pCommand, [Data, UserName, nil, self()]);
                 _ -> {error, not_supported}
             end;
         {pCommand, Msg} ->
             case Msg of
-                valid_username   -> ok = gen_tcp:send(Sock, "valid_username");
+                {valid_username, UName} -> ok = gen_tcp:send(Sock, "valid_username"),
+                                           pSocket_loop(Sock, PidBalance, UName);
                 invalid_username -> ok = gen_tcp:send(Sock, "invalid_username");
                 {lsg, Gl}        -> ok = gen_tcp:send(Sock, "lsg"),
-                                    %ok = gen_tcp:send(Sock, Gl),
                                     ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
                                     ok = gen_tcp:send(Sock, "end");
-                _ -> error
+                _ -> io:format("Error en el pCommand ~n", [])
             end;
         {tcp_closed, Sock} ->
                 io:format("El usuario se ha desconectado~n");
         _ -> io:format("Error en el mensaje~n")
     end,
-    pSocket_loop(Sock, PidBalance). 
+    pSocket_loop(Sock, PidBalance, UserName). 
 
    
 %% pBalance
