@@ -135,7 +135,7 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
     case string:tokens(Command," ") of
         ["CON", UserName] -> cmd_con(UserName, PSocket);
         ["LSG"]           -> cmd_lsg(PSocket, 0);
-        ["NEW"]           -> cmd_new(PSocket);
+        ["NEW"]           -> cmd_new(PSocket, PlayerId);
 %        ["ACC", CmdId, GameId] ->
 %        ["PLA", CmdId, GameId, Play] ->
 %        ["OBS", CmdId, GameId] ->

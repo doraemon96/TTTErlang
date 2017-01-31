@@ -20,23 +20,28 @@ cmd_con(UserName, PSocket) ->
 %% TODO
 cmd_lsg(PSocket, CmdId) ->
     GamesList  = list_games(),
+    io:format("Start ~n", []),
     GamesList2 = lists:map(fun({_ ,X, Y, Z}) -> erlang:integer_to_list(X) ++ " " 
                                                 ++ Y ++ " " 
                                                 ++ Z end, GamesList),
     PSocket ! {pCommand, {lsg, GamesList2}},
+    io:format("End~n", []),
     ok.
 
 %% NEW
 %%
 %% TODO
-cmd_new(PSocket) ->
+cmd_new(PSocket, PlayerId) ->
     F = fun() -> 
           Handle = qlc:q([P#game.gameid || P <- mnesia:table(game)]),
           qlc:e(Handle)
         end,
-    Max = lists:max(mnesia:activity(transaction, F)),
+    Ids = mnesia:activity(transaction, F),
+    case Ids of
+        [] -> create_game(1, PlayerId);
+        _  -> create_game(lists:max(Ids) + 1, PlayerId)
+    end,
     ok.
-    %create_game(Max + 1, UName). 
     
 
 %% ACC
