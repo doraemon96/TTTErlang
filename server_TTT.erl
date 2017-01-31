@@ -73,7 +73,8 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                 {lsg, Gl}        -> ok = gen_tcp:send(Sock, "lsg"),
                                     ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
                                     ok = gen_tcp:send(Sock, "end");
-                _ -> io:format("Error en el pCommand ~n", [])
+                Default -> io:format("Error en mensaje de pCommand ~n", []),
+                           ok = gen_tcp:send(Sock, Default);
             end;
         {tcp_closed, Sock} ->
                 io:format("El usuario se ha desconectado~n");
@@ -141,6 +142,5 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
 %        ["OBS", CmdId, GameId] ->
 %        ["LEA", CmdId, GameId] ->
 %        ["BYE"] ->
-        _ -> io:format("ERROR not_implemented~n"),
-             PSocket ! ok
+        _ -> PSocket ! "command_not_implemented"
     end.
