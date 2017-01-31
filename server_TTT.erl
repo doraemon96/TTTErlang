@@ -56,7 +56,6 @@ pSocket(Sock, PidBalance) ->
     pSocket_loop(Sock, PidBalance, nil).
 
 pSocket_loop(Sock, PidBalance, UserName) ->
-    io:format("User: ~p~n", [UserName]),
     receive 
         {tcp, Sock, Data} ->
             PidBalance ! {pSocket, self()},
@@ -76,7 +75,7 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                 {new_ok, ID}     -> ok = gen_tcp:send(Sock, "new_ok"),
                                     ok = gen_tcp:send(Sock, erlang:integer_to_list(ID));
                 Default -> io:format("Error en mensaje de pCommand ~n", []),
-                           ok = gen_tcp:send(Sock, Default);
+                           ok = gen_tcp:send(Sock, Default)
             end;
         {tcp_closed, Sock} ->
                 io:format("El usuario se ha desconectado~n");

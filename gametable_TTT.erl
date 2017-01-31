@@ -21,6 +21,21 @@ list_games() ->
     mnesia:activity(transaction, F).
 
 
+%%
+%%
+%%
+delete_game(GameId) ->
+    F = fun() ->
+            mnesia:delete({game, GameId})
+        end,
+    mnesia:activity(transaction, F).
+
+%%
+%%
+%%
+delete_by_username(UName) ->
+    ok.
+
 %% get_game_table devuelve el tablero de un juego.
 get_game_table(Game) ->
     Game#game.table.
