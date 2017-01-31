@@ -1,23 +1,24 @@
--module(gametable_TTT).
 -compile(export_all).
 
--record(game, {table = [[0,0,0],[0,0,0],[0,0,0]], player1, player2}).
+%% create_game
+%%
+%% TODO
+create_game(GameId, UName) ->
+    F = fun() ->
+            mnesia:write(#game{gameid=GameId,
+                               user1=UName})
+        end,
+    mnesia:activity(transaction, F).
 
-
-%% create_game toma (Jugador, nil) si espera un jugador mas para empezar la partida,
-%%  cuando este se conecte, se llamara a create_game con ambos jugadores como parametros.
-create_game(nil, nil) -> 
-    {error, not_supported};
-create_game(Player1, Player2) ->
-    case Player2 of
-        nil ->
-            receive
-                {new_player, Player2} -> create_game(Player1, Player2);
-                _ -> {error, not_supported}
-            end;
-        _ -> Game = #game{player1 = Player1, player2 = Player2}
-    end,
-    ok.
+%% list_games
+%%
+%% TODO
+list_games() ->
+    F = fun() -> 
+          Handle = qlc:q([P || P <- mnesia:table(db_game)]),
+          qlc:e(Handle)
+        end,
+    mnesia:activity(transaction, F).
 
 
 %% get_game_table devuelve el tablero de un juego.
@@ -27,16 +28,16 @@ get_game_table(Game) ->
 
 %% get_game_players devuelve una tupla de jugadores.
 get_game_players(Game) ->
-    {Game#game.player1, Game#game.player2}.
+    {Game#game.user1, Game#game.user2}.
 
 
 %% set_game_table cambia el tablero segun una jugada,
 %%  devuelve true si la jugada fue posible, y false si no.
 set_game_table(Game, Table) ->
     case is_table_possible(get_game_table(Game), Table) of
+        false -> false;
         true  -> Game#game{table = Table},
-                 true;
-        false -> false
+                 true
     end.
 
 is_table_possible(TableIn,TableOut) ->
@@ -75,6 +76,6 @@ table_checkcol(Table) ->
     Fea = lists:foreach(fun(X) -> (element(1,X) == element(2,X)) and (element(2,X) == element(3,X)) end),
     lists:any(fun(X) -> X end, Fea).
 table_checkdiagonal(Table) ->
-    Diag1 = (element(1, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(3, lists(nth(3,Table)))),
-    Diag2 = (element(3, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(1, lists(nth(3,Table)))),
+    Diag1 = (element(1, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(3, lists:nth(3,Table))),
+    Diag2 = (element(3, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(1, lists:nth(3,Table))),
     Diag1 or Diag2.

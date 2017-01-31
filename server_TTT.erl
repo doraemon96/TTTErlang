@@ -1,79 +1,14 @@
 -module(server_TTT).
 -compile(export_all).
 -include_lib("stdlib/include/qlc.hrl").
-%-include_lib("stdlib/include/mnemosyne.hrl").
-%-include("commands_TTT.erl").
+-include("commands_TTT.erl").
 
--record(user, {name,
-               empty}).
-
-%% Si vamos a hacer un spawn por cada partida ¿Por qué no usar el pid ya que este es único?
--record(db_game, {gameid,
-                  user1,
-                  user2 = "*waiting*"}). 
-
-%% *************************************************************** %%
-%% ***** Funciones para agregar o quitar de la base de datos ***** %%
-%% *************************************************************** %%
-%% Registro de username
-add_username(UName) ->
-    F = fun() ->
-            mnesia:write(#user{name=UName})
-        end,
-    mnesia:activity(transaction, F).
-
-exists_username(UName) ->
-    F = fun() ->
-            case mnesia:read({user, UName}) of 
-                [] -> false;
-                _  -> true
-            end
-        end,
-    mnesia:activity(transaction, F). 
-
-delete_username(UName) ->
-    F = fun() ->
-            mnesia:delete({user, UName})
-        end,
-    mnesia:activity(transaction, F).
-
-%% Listar todos los juegos
-list_games() ->
-    F = fun() -> 
-          Handle = qlc:q([P || P <- mnesia:table(db_game)]),
-          qlc:e(Handle)
-        end,
-    mnesia:activity(transaction, F).
-
-%% Manipular juegos
-create_game(GameId, UName1, UName2) ->
-    F = fun() ->
-            mnesia:write(#db_game{gameid=GameId,
-                               user1=UName1,
-                               user2=UName2})
-        end,
-    mnesia:activity(transaction, F).
-
-init(Port) -> 
-    mnesia:create_schema([node()]),
-    mnesia:start(),   
-    mnesia:create_table(user, [{attributes, record_info(fields, user)}, {disc_copies, [node()]}]),
-    mnesia:create_table(db_game, [{attributes, record_info(fields, db_game)}, {disc_copies, [node()]}]),
-    spawn(?MODULE, start_server, [Port]),
-    ok.
-
-init(Port, Node) ->
-    rpc:call(Node, mnesia, change_config, [extra_db_nodes, [node()]]),
-    mnesia:change_table_copy_type(schema, node(), disc_copies),
-    mnesia:add_table_copy(user, node(), disc_copies),
-    mnesia:add_table_copy(db_game, node(), disc_copies),
-    spawn(?MODULE, start_server, [Port]),
-    ok.
 
 %% *************************************************************** %%
 %% ******************** Funciones del server ********************* %%
 %% *************************************************************** %%
 
+%% start_server
 %% Se inician todos los procesos inherentes al server 
 start_server(Port) ->
     Number = erlang:length(nodes()),
@@ -106,6 +41,7 @@ start_server(Port) ->
 
     ok.
 
+%% dispatcher
 %% Aceptamos la conexión, y partir de allí creamos un nuevo proceso psocket.
 dispatcher(LSock, PidBalance) ->
     {ok, Sock} = gen_tcp:accept(LSock),
@@ -138,19 +74,14 @@ pSocket_loop(Sock, PidBalance) ->
                                     ok = gen_tcp:send(Sock, "end");
                 _ -> error
             end;
-        {tcp_closed, Socket} ->
+        {tcp_closed, Sock} ->
                 io:format("El usuario se ha desconectado~n");
         _ -> io:format("Error en el mensaje~n")
     end,
     pSocket_loop(Sock, PidBalance). 
 
-%%send_list_tcp(Sock, [H | T]) ->
-%%    case T of
-%%    [] -> ok= 
-%%    ok = gen_tcp:send(Sock, term_to_binary(H)),
-%%    send_list_tcp(T).
    
-
+%% pBalance
 %% pBalance funciona de la siguiente manera: tiene como argumento un nodo que es el de menor carga.
 %% Cuando recibe información de algún pStat compara si este nuevo nodo está menos cargado que el
 %% que ya tiene. En caso afirmativo, este pasa a ser el nuevo argumento de la función pBalance; caso
@@ -180,6 +111,8 @@ pBalance(Queue, Reductions, Node) ->
     end,
     pBalance(Queue, Reductions, Node).
 
+%% pStat
+%% Obtiene datos de carga de los nodos y los envia.
 pStat() ->
     %% Obtenemos datos de carga
     Queue           = statistics(run_queue),
@@ -193,14 +126,15 @@ pStat() ->
     receive after 5000 -> ok end,
     pStat().
 
-
+%% pCommand
+%% Llama a las funciones pertinentes a los comandos
 pCommand(Command, PlayerId, GameId, PSocket) ->
     %io:format("Me crearon en el nodo ~p ~n", [node()]),
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
-        ["CON", UserName] -> cmd_connect(UserName, PSocket);
+        ["CON", UserName] -> cmd_con(UserName, PSocket);
         ["LSG"]           -> cmd_lsg(PSocket, 0);
-%        ["NEW", CmdId] ->
+        ["NEW"]           -> cmd_new(PSocket);
 %        ["ACC", CmdId, GameId] ->
 %        ["PLA", CmdId, GameId, Play] ->
 %        ["OBS", CmdId, GameId] ->
@@ -209,31 +143,3 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
         _ -> io:format("ERROR not_implemented~n"),
              PSocket ! ok
     end.
-
-%% *************************************************************** %%
-%% ******************** Comandos del cliente ********************* %%
-%% *************************************************************** %%
-cmd_connect(UserName, PSocket) ->
-    case exists_username(UserName) of
-        true  -> PSocket ! {pCommand, invalid_username}; 
-        false ->
-            add_username(UserName), 
-            PSocket ! {pCommand, valid_username}
-    end,
-    ok. 
-
-cmd_lsg(PSocket, CmdId) ->
-    GamesList  = list_games(),
-    GamesList2 = lists:map(fun({_ ,X, Y, Z}) -> erlang:integer_to_list(X) ++ " " 
-                                                ++ Y ++ " " 
-                                                ++ Z end, GamesList),
-    PSocket ! {pCommand, {lsg, GamesList2}},
-    ok.
-
-cmd_new(PSocket) ->
-    F = fun() -> 
-          Handle = qlc:q([P#db_game.gameid || P <- mnesia:table(db_game)]),
-          qlc:e(Handle)
-        end,
-    Max = lists:max(mnesia:activity(transaction, F)),
-    spawn(?MODULE).
