@@ -73,6 +73,8 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                 {lsg, Gl}        -> ok = gen_tcp:send(Sock, "lsg"),
                                     ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
                                     ok = gen_tcp:send(Sock, "end");
+                {new_ok, ID}     -> ok = gen_tcp:send(Sock, "new_ok"),
+                                    ok = gen_tcp:send(Sock, erlang:integer_to_list(ID));
                 _ -> io:format("Error en el pCommand ~n", [])
             end;
         {tcp_closed, Sock} ->

@@ -26,11 +26,14 @@ client_loop(Sock) ->
     Data = string:strip(io:get_line("Comando: "), right, $\n),
     ok = gen_tcp:send(Sock, Data),
     receive
-        {tcp, Sock, "lsg"} -> io:format(string:centre("Game ID", 22), []),
-                              io:format(string:centre("Player 1", 22), []),
-                              io:format(string:centre("Player 2", 22), []),
-                              io:format("~n", []),
-                              lsg_loop(Sock);
+        {tcp, Sock, "lsg"}    -> io:format(string:centre("Game ID", 22), []),
+                                 io:format(string:centre("Player 1", 22), []),
+                                 io:format(string:centre("Player 2", 22), []),
+                                 io:format("~n", []),
+                                 lsg_loop(Sock);
+        {tcp, Sock, "new_ok"} -> receive
+                                    {tcp, Sock, ID} -> io:format("Nueva partida creada con ID: ~p~n", [erlang:list_to_integer(ID)])
+                                 end; 
         _ -> io:format("Comando no implementado ~n")
     end,
     %ok = gen_tcp:close(Sock).
