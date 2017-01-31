@@ -24,3 +24,6 @@ Caso contrario seguir la siguiente secuencia:
 Debe tenerse conocimiento de la dirección ip de un server (server principal) que esté escuchando en el puerto 8000,
 y acto seguido se ejecuta client("ip_host").
 
+#Cliente
+Generamos automáticamente el CmdId como {username, nro}.
+

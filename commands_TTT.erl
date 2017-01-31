@@ -18,14 +18,12 @@ cmd_con(UserName, PSocket) ->
 %% LSG
 %%
 %% TODO
-cmd_lsg(PSocket, CmdId) ->
+cmd_lsg(PSocket) ->
     GamesList  = list_games(),
-    io:format("Start ~n", []),
     GamesList2 = lists:map(fun({_ , X, Y, Z, _}) -> erlang:integer_to_list(X) ++ " " 
                                                     ++ Y ++ " " 
                                                     ++ Z end, GamesList),
     PSocket ! {pCommand, {lsg, GamesList2}},
-    io:format("End~n", []),
     ok.
 
 %% NEW
@@ -49,7 +47,18 @@ cmd_new(PSocket, PlayerId) ->
 %% ACC
 %%
 %% TODO
-cmd_acc() ->
+cmd_acc(PSocket, GameId, UserName) ->
+    F = fun() -> R = mnesia:read({game, GameId}),
+                 case R of
+                     []   -> PSocket ! {pCommand, {acc, not_exists}};
+                     [G]  -> case erlang:element(4, G) of
+                                "*waiting*" -> PSocket ! {pCommand, {acc, acc}},
+                                               mnesia:write(G#game{user2=UserName});
+                                _           -> PSocket ! {pCommand, {acc, not_acc}}
+                             end
+                 end
+        end,
+    mnesia:activity(transaction, F), 
     ok.
 
 %% PLA

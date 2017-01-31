@@ -34,7 +34,12 @@ delete_game(GameId) ->
 %%
 %%
 delete_by_username(UName) ->
-    ok.
+    F = fun() -> 
+          Handle = qlc:q([P#game.gameid || P <- mnesia:table(game), (P#game.user1 == UName) or (P#game.user2 == UName)]),
+          qlc:e(Handle)
+        end,
+    L = mnesia:activity(transaction, F),
+    lists:foreach(fun(X) -> delete_game(X) end, L).
 
 %% get_game_table devuelve el tablero de un juego.
 get_game_table(Game) ->
