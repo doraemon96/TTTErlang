@@ -15,7 +15,7 @@ create_game(GameId, UName) ->
 %% TODO
 list_games() ->
     F = fun() -> 
-          Handle = qlc:q([P || P <- mnesia:table(db_game)]),
+          Handle = qlc:q([P || P <- mnesia:table(game)]),
           qlc:e(Handle)
         end,
     mnesia:activity(transaction, F).

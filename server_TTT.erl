@@ -73,6 +73,8 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                 {lsg, Gl}        -> ok = gen_tcp:send(Sock, "lsg"),
                                     ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
                                     ok = gen_tcp:send(Sock, "end");
+                {new_ok, ID}     -> ok = gen_tcp:send(Sock, "new_ok"),
+                                    ok = gen_tcp:send(Sock, erlang:integer_to_list(ID));
                 Default -> io:format("Error en mensaje de pCommand ~n", []),
                            ok = gen_tcp:send(Sock, Default);
             end;
@@ -136,7 +138,7 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
     case string:tokens(Command," ") of
         ["CON", UserName] -> cmd_con(UserName, PSocket);
         ["LSG"]           -> cmd_lsg(PSocket, 0);
-        ["NEW"]           -> cmd_new(PSocket);
+        ["NEW"]           -> cmd_new(PSocket, PlayerId);
 %        ["ACC", CmdId, GameId] ->
 %        ["PLA", CmdId, GameId, Play] ->
 %        ["OBS", CmdId, GameId] ->
