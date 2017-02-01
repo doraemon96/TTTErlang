@@ -82,5 +82,7 @@ cmd_lea() ->
 %% BYE
 %%
 %% TODO
-cmd_bye() ->
+cmd_bye(PSocket, UserName) ->
+    delete_by_username(UserName),
+    PSocket ! {pCommand, bye},
     ok.
