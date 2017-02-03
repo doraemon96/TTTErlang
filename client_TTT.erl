@@ -61,11 +61,11 @@ client_loop(Sock, CmdN, UserName) ->
 lsg_loop(Sock) ->
     receive
         {tcp, Sock, "end"} -> ok;
-        {tcp, Sock, List} -> Data = string:tokens(List, " "),
-                             lists:foreach(fun(X) -> io:format(string:centre(X, 22), []) end, Data),
-                             io:format("~n", []),
-                             lsg_loop(Sock);
-        _ -> io:format("WTH? ~n"),
-             lsg_loop(Sock)
+        {tcp, Sock, List}  -> Data = string:tokens(List, " "),
+                              lists:foreach(fun(X) -> io:format(string:centre(X, 22), []) end, Data),
+                              io:format("~n", []),
+                              lsg_loop(Sock);
+        _                  -> io:format("WTH? ~n"),
+                              lsg_loop(Sock)
     end,
     ok.

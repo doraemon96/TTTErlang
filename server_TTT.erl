@@ -70,6 +70,7 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                            pSocket_loop(Sock, PidBalance, UName);
                 invalid_username        -> ok = gen_tcp:send(Sock, "invalid_username");
                 {lsg, Gl, CmdId}        -> ok = gen_tcp:send(Sock, "lsg"),
+                                           ok = gen_tcp:send(Sock, CmdId),
                                            ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
                                            ok = gen_tcp:send(Sock, "end");
                 {new_ok, ID, CmdId}     -> ok = gen_tcp:send(Sock, "new_ok"),
