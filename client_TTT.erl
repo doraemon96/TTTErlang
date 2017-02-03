@@ -35,7 +35,8 @@ client_loop(Sock, CmdN, UserName) ->
                                          lsg_loop(Sock),
                                          client_loop(Sock, CmdN + 1, UserName);
                 {tcp, Sock, "new_ok"} -> receive
-                                            {tcp, Sock, ID} -> io:format("~n ***Nueva partida creada con ID: ~p***~n~n", [erlang:list_to_integer(ID)])
+                                            {tcp, Sock, ID} -> io:format("~n ***Nueva partida creada con ID: ~p***~n~n", [erlang:list_to_integer(ID)]),
+                                                               spawn(?MODULE, new_game, [ID])
                                          end, 
                                          client_loop(Sock, CmdN + 1, UserName);
                 {tcp, Sock, "acc"}    -> receive
@@ -44,6 +45,7 @@ client_loop(Sock, CmdN, UserName) ->
                                             {tcp, Sock, "not_accepted"} -> io:format("*** Error: la partida ya está en juego~n", [])
                                          end,
                                          client_loop(Sock, CmdN + 1, UserName);
+                %{tcp, Sock, "pla"}    -> 
                 {tcp, Sock, "bye"}    -> io:format("~n||| ¡Hasta luego! |||~n~n", []),
                                          ok = gen_tcp:close(Sock),
                                          client_loop(Sock, 0, UserName);
@@ -69,3 +71,24 @@ lsg_loop(Sock) ->
                               lsg_loop(Sock)
     end,
     ok.
+
+%¦
+print_table(Table) ->
+    F  = fun(X) -> case X of
+                    0 -> " ";
+                    1 -> "X";
+                    2 -> "O";
+                    _ -> ""
+                   end
+         end,
+    [A1, B1, C1, A2, B2, C2, A3, B3, C3] = lists:map(F, lists:flatten(Table)),
+    S1 = "    a   b   c ~n",
+    S2 = "              ~n",
+    S3 = "   ---+---+---~n",
+    S4 = "1   " ++ A1 ++ " ¦ " ++ B1 ++ " ¦ " ++ C1 ++ " ~n",
+    S5 = "2   " ++ A2 ++ " ¦ " ++ B2 ++ " ¦ " ++ C2 ++ " ~n",
+    S6 = "3   " ++ A3 ++ " ¦ " ++ B3 ++ " ¦ " ++ C3 ++ " ~n",
+    io:format("~n" ++ S1 ++ S2 ++ S4 ++ S3 ++ S5 ++ S3 ++ S6 ++ "~n~n", []). 
+
+%new_game(ID) ->
+    
