@@ -71,9 +71,9 @@ get_game_players(GameId) ->
 %% Cambia el tablero segun una jugada y devuelve true si la jugada fue
 %%  posible, y false si no.
 set_game_table(GameId, Table) ->
-    case is_table_possible(get_game_table(GameId), Table) of
-        false -> false;
-        true  -> F = fun() ->
+    case is_table_impossible(get_game_table(GameId), Table) of
+        true  -> false;
+        false -> F = fun() ->
                         [R] = mnesia:read({game, GameId}), 
                         mnesia:write(R#game{table = Table})
                      end,
@@ -81,27 +81,23 @@ set_game_table(GameId, Table) ->
                  true
     end.
 
-is_table_possible(TableIn, TableOut) ->
-    not ((TableIn == TableOut) or table_checksuperpos(TableIn, TableOut)).
+is_table_impossible(TableIn, TableOut) ->
+    table_checkmultimove(TableIn, TableOut) or table_checksuperpos(TableIn, TableOut).
 
-table_checksinglemove(TableIn, TableOut) ->
+table_checkmultimove(TableIn, TableOut) ->
     Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
     F = fun(X) -> if
-                      (element(1,X) /= elemnt(2,X)) -> 1;
+                      (element(1,X) /= element(2,X)) -> 1;
                       true                          -> 0
                   end
         end,
-    L = lists:map(F, Zip),
-    if
-        lists:sum(L) /= 1 -> true;
-        true              -> false
-    end.
+    (lists:sum(lists:map(F, Zip))) /= 1.
 
 table_checksuperpos(TableIn, TableOut) ->
     Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
     Fea = lists:map(fun(X) -> if 
                                 (element(1,X) /= 0) and (element(2,X) /= element(1,X)) -> false;
-                                true -> true
+                                true                                                   -> true
                               end
                     end,
                     Zip),
