@@ -97,6 +97,19 @@ table_checkequal(TableIn, TableOut) ->
        true -> false
     end.
 
+table_checksinglemove(TableIn, TableOut) ->
+    Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
+    F = fun(X) -> if
+                      (element(1,X) /= elemnt(2,X)) -> 1;
+                      true                          -> 0
+                  end
+        end,
+    L = lists:map(F, Zip),
+    if
+        lists:sum(L) /= 1 -> true;
+        true              -> false
+    end.
+
 table_checksuperpos(TableIn, TableOut) ->
     Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
     Fea = lists:map(fun(X) -> if 
