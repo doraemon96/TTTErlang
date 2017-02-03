@@ -141,17 +141,17 @@ pStat() ->
 
 %% pCommand
 %% Llama a las funciones pertinentes a los comandos
-pCommand(Command, PlayerId, GameId, PSocket) ->
+pCommand(Command, PlayerId, PSocket) ->
     %io:format("Me crearon en el nodo ~p ~n", [node()]),
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
-        ["CON", UserName]   -> cmd_con(UserName, PSocket);
-        ["LSG", CmdId]      -> cmd_lsg(PSocket, CmdId);
-        ["NEW", CmdId]      -> cmd_new(PSocket, PlayerId, CmdId);
-        ["ACC", GId, CmdId] -> cmd_acc(PSocket, erlang:list_to_integer(GId), PlayerId, CmdId);
-%        ["PLA", CmdId, GameId, Play] ->
-%        ["OBS", CmdId, GameId] ->
-%        ["LEA", CmdId, GameId] ->
+        ["CON", UserName]         -> cmd_con(PSocket, UserName);
+        ["LSG", CmdId]            -> cmd_lsg(PSocket, CmdId);
+        ["NEW", CmdId]            -> cmd_new(PSocket, PlayerId, CmdId);
+        ["ACC", GId, CmdId]       -> cmd_acc(PSocket, erlang:list_to_integer(GId), PlayerId, CmdId);
+        ["PLA", GId, Play, CmdId] -> cmd_pla(PSocket, GId, Play, PlayerId, CmdId);
+%        ["OBS", CmdId, GameId]       ->
+%        ["LEA", CmdId, GameId]       ->
         ["BYE"]             -> cmd_bye(PSocket, PlayerId); 
         _ -> PSocket ! "command_not_implemented"
     end.
