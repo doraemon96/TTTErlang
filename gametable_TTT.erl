@@ -84,6 +84,19 @@ set_game_table(GameId, Table) ->
 is_table_possible(TableIn, TableOut) ->
     not ((TableIn == TableOut) or table_checksuperpos(TableIn, TableOut)).
 
+table_checksinglemove(TableIn, TableOut) ->
+    Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
+    F = fun(X) -> if
+                      (element(1,X) /= elemnt(2,X)) -> 1;
+                      true                          -> 0
+                  end
+        end,
+    L = lists:map(F, Zip),
+    if
+        lists:sum(L) /= 1 -> true;
+        true              -> false
+    end.
+
 table_checksuperpos(TableIn, TableOut) ->
     Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
     Fea = lists:map(fun(X) -> if 
