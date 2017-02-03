@@ -26,7 +26,7 @@ client_loop(Sock, CmdN, UserName) ->
         0 -> ok;
         _ -> Data = string:strip(io:get_line("Comando: "), right, $\n), 
              io:format("Comand ID: {~p, ~p} ~n", [UserName, CmdN]),
-             ok   = gen_tcp:send(Sock, Data),
+             ok   = gen_tcp:send(Sock, Data ++ " " ++ UserName ++ CmdN),
              receive
                 {tcp, Sock, "lsg"}    -> io:format(string:centre("Game ID", 22), []),
                                          io:format(string:centre("Player 1", 22), []),

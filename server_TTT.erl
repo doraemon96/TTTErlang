@@ -68,21 +68,21 @@ pSocket_loop(Sock, PidBalance, UserName) ->
             case Msg of
                 {valid_username, UName} -> ok = gen_tcp:send(Sock, "valid_username"),
                                            pSocket_loop(Sock, PidBalance, UName);
-                invalid_username -> ok = gen_tcp:send(Sock, "invalid_username");
-                {lsg, Gl}        -> ok = gen_tcp:send(Sock, "lsg"),
-                                    ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
-                                    ok = gen_tcp:send(Sock, "end");
-                {new_ok, ID}     -> ok = gen_tcp:send(Sock, "new_ok"),
-                                    ok = gen_tcp:send(Sock, erlang:integer_to_list(ID));
-                {acc, AccMsg}    -> ok = gen_tcp:send(Sock, "acc"),
-                                    case AccMsg of
-                                        not_exists -> ok = gen_tcp:send(Sock, "not_exists");
-                                        acc        -> ok = gen_tcp:send(Sock, "accepted");
-                                        not_acc    -> ok = gen_tcp:send(Sock, "not_accepted")
-                                    end;
-                bye              -> ok = gen_tcp:send(Sock, "bye");
-                Default -> io:format("Error en mensaje de pCommand ~n", []),
-                           ok = gen_tcp:send(Sock, Default)
+                invalid_username        -> ok = gen_tcp:send(Sock, "invalid_username");
+                {lsg, Gl, CmdId}        -> ok = gen_tcp:send(Sock, "lsg"),
+                                           ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
+                                           ok = gen_tcp:send(Sock, "end");
+                {new_ok, ID, CmdId}     -> ok = gen_tcp:send(Sock, "new_ok"),
+                                           ok = gen_tcp:send(Sock, erlang:integer_to_list(ID));
+                {acc, AccMsg, CmdId}    -> ok = gen_tcp:send(Sock, "acc"),
+                                           case AccMsg of
+                                              not_exists -> ok = gen_tcp:send(Sock, "not_exists");
+                                              acc        -> ok = gen_tcp:send(Sock, "accepted");
+                                              not_acc    -> ok = gen_tcp:send(Sock, "not_accepted")
+                                           end;
+                bye                     -> ok = gen_tcp:send(Sock, "bye");
+                Default                 -> io:format("Error en mensaje de pCommand ~n", []),
+                                           ok = gen_tcp:send(Sock, Default)
             end;
         {tcp_closed, Sock} ->
                 delete_by_username(UserName),
@@ -145,9 +145,9 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
         ["CON", UserName]   -> cmd_con(UserName, PSocket);
-        ["LSG"]             -> cmd_lsg(PSocket);
-        ["NEW"]             -> cmd_new(PSocket, PlayerId);
-        ["ACC", GId]        -> cmd_acc(PSocket, erlang:list_to_integer(GId), PlayerId);
+        ["LSG", CmdId]      -> cmd_lsg(PSocket, CmdId);
+        ["NEW", CmdId]      -> cmd_new(PSocket, PlayerId, CmdId);
+        ["ACC", GId, CmdId] -> cmd_acc(PSocket, erlang:list_to_integer(GId), PlayerId, CmdId);
 %        ["PLA", CmdId, GameId, Play] ->
 %        ["OBS", CmdId, GameId] ->
 %        ["LEA", CmdId, GameId] ->
