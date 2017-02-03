@@ -45,6 +45,7 @@ client_loop(Sock, CmdN, UserName) ->
                                          end,
                                          client_loop(Sock, CmdN + 1, UserName);
                 {tcp, Sock, "bye"}    -> io:format("~n||| ¡Hasta luego! |||~n~n", []),
+                                         ok = gen_tcp:close(Sock),
                                          client_loop(Sock, 0, UserName);
                 _                     -> io:format("Comando no implementado ~n"),
                                          client_loop(Sock, CmdN + 1, UserName)
