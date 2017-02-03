@@ -82,20 +82,7 @@ set_game_table(GameId, Table) ->
     end.
 
 is_table_possible(TableIn, TableOut) ->
-    case table_checkequal(TableIn, TableOut) of
-        true -> io:format("Aca ~n", []),
-                false;
-        _    -> case table_checksuperpos(TableIn, TableOut) of
-                   true -> io:format("Aca 2 ~n", []),
-                           false;
-                   _    -> true
-                end
-    end.
-
-table_checkequal(TableIn, TableOut) ->
-    if TableIn == TableOut -> true;
-       true -> false
-    end.
+    not ((TableIn == TableOut) or table_checksuperpos(TableIn, TableOut)).
 
 table_checksuperpos(TableIn, TableOut) ->
     Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
