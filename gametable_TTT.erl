@@ -43,47 +43,68 @@ delete_by_username(UName) ->
 
 %% get_game_table
 %% Devuelve el tablero de un juego.
-get_game_table(Game) ->
-    Game#game.table.
+get_game_table(GameId) ->
+    F = fun() ->
+            case mnesia:read({game, GameId}) of
+                [T] -> erlang:element(5, T);
+                _   -> []
+            end
+        end,
+    mnesia:activity(transaction, F).
 
 
 %% get_game_players
 %% Devuelve una tupla de jugadores.
-get_game_players(Game) ->
-    {Game#game.user1, Game#game.user2}.
+get_game_players(GameId) ->
+    F = fun() ->
+            case mnesia:read({game, GameId}) of
+                [T] -> U1 = erlang:element(3, T),
+                       U2 = erlang:element(4, T),
+                       {U1, U2};
+                _   -> []
+            end
+        end,
+    mnesia:activity(transaction, F).
 
 
 %% set_game_table 
 %% Cambia el tablero segun una jugada y devuelve true si la jugada fue
 %%  posible, y false si no.
-set_game_table(Game, Table) ->
-    case is_table_possible(get_game_table(Game), Table) of
+set_game_table(GameId, Table) ->
+    case is_table_possible(get_game_table(GameId), Table) of
         false -> false;
-        true  -> Game#game{table = Table},
+        true  -> F = fun() ->
+                        [R] = mnesia:read({game, GameId}), 
+                        mnesia:write(R#game{table = Table})
+                     end,
+                 mnesia:activity(transaction, F),
                  true
     end.
 
-is_table_possible(TableIn,TableOut) ->
+is_table_possible(TableIn, TableOut) ->
     case table_checkequal(TableIn, TableOut) of
-        true -> false;
-        _ -> case table_checksuperpos(TableIn, TableOut) of
-                true -> false;
-                _ -> true
-            end
+        true -> io:format("Aca ~n", []),
+                false;
+        _    -> case table_checksuperpos(TableIn, TableOut) of
+                   true -> io:format("Aca 2 ~n", []),
+                           false;
+                   _    -> true
+                end
     end.
 
 table_checkequal(TableIn, TableOut) ->
     if TableIn == TableOut -> true;
        true -> false
     end.
+
 table_checksuperpos(TableIn, TableOut) ->
     Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
-    Fea = lists:foreach(fun(X) -> if 
-                                    (element(1,X) == 0) or (element(2,X) == 0) -> true;
-                                    true -> element (1,X) == element(2,X) end
-                        end,
+    Fea = lists:map(fun(X) -> if 
+                               (element(1,X) == 0) or (element(2,X) == 0) -> true;
+                               true -> element (1,X) == element(2,X) end
+                              end,
                         Zip),
-    lists:all(fun(X) -> X end, Fea).
+    not lists:all(fun(X) -> X end, Fea).
 
 
 %% get_game_status
