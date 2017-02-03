@@ -65,24 +65,11 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
 %%
 %% TODO
 cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
-    case get_game_players(GameId) of
-        {UserName, _} -> if 
-                            is_turn(UserName) -> if
-                                                    set_game_table(GameId, make_play(UserName, GameId, Play)) -> %TODO: Play has been made :D
-                                                    _                                                         -> %TODO: Play failed D:
-                                                 end;
-                            _                 -> %TODO: Not UserName's turn
-                         end;
-        {_, UserName} -> if 
-                            is_turn(UserName) -> if
-                                                    set_game_table(GameId, make_play(UserName, GameId, Play)) -> %TODO: Play has been made :D
-                                                    _                                                         -> %TODO: Play failed D:
-                                                 end;
-                            _                 -> %TODO: Not UserName's turn
-                         end;
-        _             -> %TODO: Not UserName's game
+    if 
+        set_game_table(GameId, make_play(UserName, GameId, Play), UserName) -> PSocket ! {pCommand, {pla, success}};
+        _                                                                   -> PSocket ! {pCommand, {pla, not_allowed}}
     end,
-    ok.
+    ok. 
 
 %% OBS
 %%

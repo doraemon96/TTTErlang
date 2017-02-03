@@ -70,15 +70,26 @@ get_game_players(GameId) ->
 %% set_game_table 
 %% Cambia el tablero segun una jugada y devuelve true si la jugada fue
 %%  posible, y false si no.
-set_game_table(GameId, Table) ->
-    case is_table_impossible(get_game_table(GameId), Table) of
-        true  -> false;
-        false -> F = fun() ->
-                        [R] = mnesia:read({game, GameId}), 
-                        mnesia:write(R#game{table = Table})
-                     end,
-                 mnesia:activity(transaction, F),
-                 true
+set_game_table(GameId, Table, UserName) ->
+    OldTable   = get_game_table(GameId),
+    if is_turn(GameId, OldTable, UserName) -> 
+            case is_table_impossible(OldTable, Table) of
+                true  -> false;
+                false -> F = fun() ->
+                                [R] = mnesia:wread({game, GameId}), 
+                                mnesia:write(R#game{table = Table})
+                             end,
+                         mnesia:activity(transaction, F),
+                         true
+            end;
+        _ -> false
+    end.
+
+is_turn(GameId, OldTable, UserName) ->
+    {U1, U2} = get_game_players(GameId),
+    case (lists:foldl(fun(X, Sum) -> if X == 0 -> 1 + Sum; Sum end, 0, lists:flatten(OldTable))) rem 2 of
+        0 -> UserName == U2;
+        _ -> UserName == U1
     end.
 
 is_table_impossible(TableIn, TableOut) ->
@@ -121,3 +132,19 @@ table_checkdiagonal(Table) ->
     Diag1 = (element(1, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(3, lists:nth(3,Table))),
     Diag2 = (element(3, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(1, lists:nth(3,Table))),
     Diag1 or Diag2.
+
+%% NICO NO PUEDE ESCRIBIR NINGUN COMENTARIO ACA
+%% YOU HAVE NO POWER HERE!
+%%
+make_play(UserName, GameId, Play) ->
+    OldTable = get_game_table(GameId),
+    case Play of
+        "a" ++ X -> X2 = erlang:list_to_integer(X),
+                    B = X2 < 4 and X2 > 0,
+                    if B -> L2 = lists:nth(2, OldTable),
+                            L3 = lists:nth(3, OldTable),
+                            L1 = case X2 o
+        "b" ++ X -> list_to_integer(X)
+        "c" ++ X -> list_to_integer(X)
+
+%set_nth_list()
