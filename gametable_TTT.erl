@@ -21,18 +21,18 @@ list_games() ->
     mnesia:activity(transaction, F).
 
 
+%% delete_game
 %%
-%%
-%%
+%% TODO
 delete_game(GameId) ->
     F = fun() ->
             mnesia:delete({game, GameId})
         end,
     mnesia:activity(transaction, F).
 
+%% delete_by_username
 %%
-%%
-%%
+%% TODO
 delete_by_username(UName) ->
     F = fun() -> 
           Handle = qlc:q([P#game.gameid || P <- mnesia:table(game), (P#game.user1 == UName) or (P#game.user2 == UName)]),
@@ -41,18 +41,21 @@ delete_by_username(UName) ->
     L = mnesia:activity(transaction, F),
     lists:foreach(fun(X) -> delete_game(X) end, L).
 
-%% get_game_table devuelve el tablero de un juego.
+%% get_game_table
+%% Devuelve el tablero de un juego.
 get_game_table(Game) ->
     Game#game.table.
 
 
-%% get_game_players devuelve una tupla de jugadores.
+%% get_game_players
+%% Devuelve una tupla de jugadores.
 get_game_players(Game) ->
     {Game#game.user1, Game#game.user2}.
 
 
-%% set_game_table cambia el tablero segun una jugada,
-%%  devuelve true si la jugada fue posible, y false si no.
+%% set_game_table 
+%% Cambia el tablero segun una jugada y devuelve true si la jugada fue
+%%  posible, y false si no.
 set_game_table(Game, Table) ->
     case is_table_possible(get_game_table(Game), Table) of
         false -> false;
@@ -83,7 +86,8 @@ table_checksuperpos(TableIn, TableOut) ->
     lists:all(fun(X) -> X end, Fea).
 
 
-%% get_game_status muestra si el juego fue ganado o sigue en progreso
+%% get_game_status
+%% Muestra si el juego fue ganado o sigue en progreso
 get_game_status(Game) ->
     Table = get_game_table(Game),
     table_checkrow(Table) or table_checkcol(Table) or table_checkdiagonal(Table).
