@@ -100,10 +100,11 @@ table_checkequal(TableIn, TableOut) ->
 table_checksuperpos(TableIn, TableOut) ->
     Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
     Fea = lists:map(fun(X) -> if 
-                               (element(1,X) == 0) or (element(2,X) == 0) -> true;
-                               true -> element (1,X) == element(2,X) end
-                              end,
-                        Zip),
+                                (element(1,X) /= 0) and (element(2,X) /= element(1,X)) -> false;
+                                true -> true
+                              end
+                    end,
+                    Zip),
     not lists:all(fun(X) -> X end, Fea).
 
 
