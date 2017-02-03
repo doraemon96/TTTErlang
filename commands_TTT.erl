@@ -5,7 +5,7 @@
 %% CON
 %%
 %% TODO
-cmd_con(UserName, PSocket) ->
+cmd_con(PSocket, UserName) ->
     case exists_username(UserName) of
         true  -> PSocket ! {pCommand, invalid_username}; 
         false ->
@@ -64,7 +64,8 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
 %% PLA
 %%
 %% TODO
-cmd_pla() ->
+cmd_pla(PSocket, GameId, Play, UserName, PlayerId, CmdId) ->
+    
     ok.
 
 %% OBS
