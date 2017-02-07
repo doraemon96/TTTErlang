@@ -70,6 +70,7 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                            pSocket_loop(Sock, PidBalance, UName);
                 invalid_username        -> ok = gen_tcp:send(Sock, "invalid_username");
                 {lsg, Gl, CmdId}        -> ok = gen_tcp:send(Sock, "lsg"),
+                                           ok = gen_tcp:send(Sock, "cmdid"),
                                            ok = gen_tcp:send(Sock, CmdId),
                                            ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
                                            ok = gen_tcp:send(Sock, "end");
@@ -81,8 +82,14 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                               acc        -> ok = gen_tcp:send(Sock, "accepted");
                                               not_acc    -> ok = gen_tcp:send(Sock, "not_accepted")
                                            end;
+                {pla, Result}           -> ok = gen_tcp:send(Sock, "pla"),
+                                           case Result of 
+                                            success     -> ok = gen_tcp:send(Sock, "success");
+                                            not_allowed -> ok = gen_tcp:send(Sock, "not_allowed");
+                                            _           -> io:format("Error en el mensaje PLA ~n", [])
+                                           end;
                 bye                     -> ok = gen_tcp:send(Sock, "bye");
-                Default                 -> io:format("Error en mensaje de pCommand ~n", []),
+                Default                 -> io:format("Error en mensaje de pCommand ~p ~n", [Default]),
                                            ok = gen_tcp:send(Sock, Default)
             end;
         {tcp_closed, Sock} ->
@@ -141,7 +148,7 @@ pStat() ->
 
 %% pCommand
 %% Llama a las funciones pertinentes a los comandos
-pCommand(Command, PlayerId, PSocket) ->
+pCommand(Command, PlayerId, GameId, PSocket) ->
     %io:format("Me crearon en el nodo ~p ~n", [node()]),
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
@@ -149,7 +156,7 @@ pCommand(Command, PlayerId, PSocket) ->
         ["LSG", CmdId]            -> cmd_lsg(PSocket, CmdId);
         ["NEW", CmdId]            -> cmd_new(PSocket, PlayerId, CmdId);
         ["ACC", GId, CmdId]       -> cmd_acc(PSocket, erlang:list_to_integer(GId), PlayerId, CmdId);
-        ["PLA", GId, Play, CmdId] -> cmd_pla(PSocket, GId, Play, PlayerId, CmdId);
+        ["PLA", GId, Play, CmdId] -> cmd_pla(PSocket, erlang:list_to_integer(GId), Play, PlayerId, CmdId);
 %        ["OBS", CmdId, GameId]       ->
 %        ["LEA", CmdId, GameId]       ->
         ["BYE"]             -> cmd_bye(PSocket, PlayerId); 

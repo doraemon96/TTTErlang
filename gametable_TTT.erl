@@ -72,22 +72,23 @@ get_game_players(GameId) ->
 %%  posible, y false si no.
 set_game_table(GameId, Table, UserName) ->
     OldTable   = get_game_table(GameId),
-    if is_turn(GameId, OldTable, UserName) -> 
-            case is_table_impossible(OldTable, Table) of
-                true  -> false;
-                false -> F = fun() ->
-                                [R] = mnesia:wread({game, GameId}), 
-                                mnesia:write(R#game{table = Table})
-                             end,
-                         mnesia:activity(transaction, F),
-                         true
-            end;
-        _ -> false
+    IsTurn     = is_turn(GameId, OldTable, UserName),
+    if IsTurn -> 
+        case is_table_impossible(OldTable, Table) of
+            true  -> false;
+            false -> F = fun() ->
+                            [R] = mnesia:wread({game, GameId}), 
+                            mnesia:write(R#game{table = Table})
+                         end,
+                     mnesia:activity(transaction, F),
+                     true
+        end;
+        true -> false
     end.
 
 is_turn(GameId, OldTable, UserName) ->
     {U1, U2} = get_game_players(GameId),
-    case (lists:foldl(fun(X, Sum) -> if X == 0 -> 1 + Sum; Sum end, 0, lists:flatten(OldTable))) rem 2 of
+    case (lists:foldl(fun(X, Sum) -> if X == 0 -> 1 + Sum; true -> Sum end end, 0, lists:flatten(OldTable))) rem 2 of
         0 -> UserName == U2;
         _ -> UserName == U1
     end.
@@ -97,11 +98,11 @@ is_table_impossible(TableIn, TableOut) ->
 
 table_checkmultimove(TableIn, TableOut) ->
     Zip = lists:zip(lists:flatten(TableIn), lists:flatten(TableOut)),
-    F = fun(X) -> if
+    F   = fun(X) -> if
                       (element(1,X) /= element(2,X)) -> 1;
-                      true                          -> 0
-                  end
-        end,
+                      true                           -> 0
+                    end
+          end,
     (lists:sum(lists:map(F, Zip))) /= 1.
 
 table_checksuperpos(TableIn, TableOut) ->
@@ -138,13 +139,41 @@ table_checkdiagonal(Table) ->
 %%
 make_play(UserName, GameId, Play) ->
     OldTable = get_game_table(GameId),
-    case Play of
-        "a" ++ X -> X2 = erlang:list_to_integer(X),
-                    B = X2 < 4 and X2 > 0,
-                    if B -> L2 = lists:nth(2, OldTable),
-                            L3 = lists:nth(3, OldTable),
-                            L1 = case X2 o
-        "b" ++ X -> list_to_integer(X)
-        "c" ++ X -> list_to_integer(X)
+    [H | T] = Play,
+    case H of
+        97  -> X2 = erlang:list_to_integer(T),
+               B  = (X2 < 4) and (X2 > 0),
+                   if B -> L2 = lists:nth(2, OldTable),
+                           L3 = lists:nth(3, OldTable),
+                           L1 = set_nth_list(lists:nth(1, OldTable), X2, 1),
+                           [L1, L2, L3];
+                      true -> error1
+                   end;
+        98  -> X2 = erlang:list_to_integer(T),
+               B  = (X2 < 4) and (X2 > 0),
+                   if B -> L1 = lists:nth(1, OldTable),
+                           L3 = lists:nth(3, OldTable),
+                           L2 = set_nth_list(lists:nth(2, OldTable), X2, 1),
+                           [L1, L2, L3];
+                      true -> error2
+                   end;
+        99  -> X2 = erlang:list_to_integer(T),
+               B  = (X2 < 4) and (X2 > 0),
+                   if B -> L1 = lists:nth(1, OldTable),
+                           L2 = lists:nth(2, OldTable),
+                           L3 = set_nth_list(lists:nth(3, OldTable), X2, 1),
+                           [L1, L2, L3];
+                      true -> error3
+                   end;
+        _ -> error
+    end.
+        %"b" ++ X -> list_to_integer(X)
+        %"c" ++ X -> list_to_integer(X)
 
-%set_nth_list()
+set_nth_list([H | T], Number, Element) ->
+    case Number of
+        1 -> [Element] ++ T;
+        _ -> [H] ++ set_nth_list(T, Number - 1, Element)
+    end.
+        
+    

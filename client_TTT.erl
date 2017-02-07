@@ -25,18 +25,25 @@ client_loop(Sock, CmdN, UserName) ->
     case CmdN of
         0 -> ok;
         _ -> Data = string:strip(io:get_line("Comando: "), right, $\n), 
-             io:format("Comand ID: {~p, ~p} ~n", [UserName, CmdN]),
-             ok   = gen_tcp:send(Sock, Data ++ " " ++ UserName ++ CmdN),
+             io:format("Command ID: {~p, ~p} ~n", [UserName, CmdN]),
+             ok   = gen_tcp:send(Sock, Data ++ " " ++ UserName ++ erlang:integer_to_list(CmdN)),
              receive
-                {tcp, Sock, "lsg"}    -> io:format(string:centre("Game ID", 22), []),
+                {tcp, Sock, "lsg"}    -> receive 
+                                            {tcp, Sock, "cmdid"} -> 
+                                                receive
+                                                    {tcp, Sock, CmdId} ->
+                                                        io:format("LSG response ~p ~n", [CmdId])
+                                                end
+                                         end,
+                                         io:format(string:centre("Game ID", 22), []),
                                          io:format(string:centre("Player 1", 22), []),
                                          io:format(string:centre("Player 2", 22), []),
                                          io:format("~n", []),
                                          lsg_loop(Sock),
                                          client_loop(Sock, CmdN + 1, UserName);
                 {tcp, Sock, "new_ok"} -> receive
-                                            {tcp, Sock, ID} -> io:format("~n ***Nueva partida creada con ID: ~p***~n~n", [erlang:list_to_integer(ID)]),
-                                                               spawn(?MODULE, new_game, [ID])
+                                            {tcp, Sock, ID} -> io:format("~n ***Nueva partida creada con ID: ~p***~n~n", [erlang:list_to_integer(ID)])
+                                                               %spawn(?MODULE, new_game, [ID])
                                          end, 
                                          client_loop(Sock, CmdN + 1, UserName);
                 {tcp, Sock, "acc"}    -> receive
@@ -45,7 +52,14 @@ client_loop(Sock, CmdN, UserName) ->
                                             {tcp, Sock, "not_accepted"} -> io:format("*** Error: la partida ya está en juego~n", [])
                                          end,
                                          client_loop(Sock, CmdN + 1, UserName);
-                %{tcp, Sock, "pla"}    -> 
+                {tcp, Sock, "pla"}    -> receive
+                                            {tcp, Sock, "success"} ->
+                                                print_table([[0, 0, 0], [0, 0, 0], [0, 0, 0]]),
+                                                client_loop(Sock, CmdN + 1, UserName);
+                                            {tcp, Sock, "not_allowed"} ->
+                                                io:format("~nxxx Jugada ilegal xxx~n~n", [])
+                                         end,
+                                         client_loop(Sock, CmdN + 1, UserName);    
                 {tcp, Sock, "bye"}    -> io:format("~n||| ¡Hasta luego! |||~n~n", []),
                                          ok = gen_tcp:close(Sock),
                                          client_loop(Sock, 0, UserName);

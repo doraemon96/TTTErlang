@@ -65,9 +65,10 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
 %%
 %% TODO
 cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
+    SetGameTable = set_game_table(GameId, make_play(UserName, GameId, Play), UserName),
     if 
-        set_game_table(GameId, make_play(UserName, GameId, Play), UserName) -> PSocket ! {pCommand, {pla, success}};
-        _                                                                   -> PSocket ! {pCommand, {pla, not_allowed}}
+        SetGameTable -> PSocket ! {pCommand, {pla, success}};
+        true         -> PSocket ! {pCommand, {pla, not_allowed}}
     end,
     ok. 
 
