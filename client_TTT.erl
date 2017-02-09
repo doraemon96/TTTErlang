@@ -32,7 +32,7 @@ client_loop(Sock, CmdN, UserName) ->
                                             {tcp, Sock, "cmdid"} -> 
                                                 receive
                                                     {tcp, Sock, CmdId} ->
-                                                        io:format("LSG response ~p ~n", [CmdId])
+                                                        io:format("~nLSG response ~p ~n~n", [CmdId])
                                                 end
                                          end,
                                          io:format(string:centre("Game ID", 22), []),
@@ -47,9 +47,14 @@ client_loop(Sock, CmdN, UserName) ->
                                          end, 
                                          client_loop(Sock, CmdN + 1, UserName);
                 {tcp, Sock, "acc"}    -> receive
-                                            {tcp, Sock, "not_exists"}   -> io:format("*** Error: la partida no existe~n", []);
-                                            {tcp, Sock, "accepted"}     -> io:format("~n||| Bienvenido al juego ??? |||~n~n", []);
-                                            {tcp, Sock, "not_accepted"} -> io:format("*** Error: la partida ya está en juego~n", [])
+                                            {tcp, Sock, "not_exists"}   -> io:format("~n*** Error: la partida no existe~n~n", []);
+                                            {tcp, Sock, "accepted"}     -> 
+                                                receive
+                                                    {tcp, Sock, GameId} ->
+                                                        io:format("~n||| Bienvenido al juego ~p |||~n~n", [erlang:list_to_integer(GameId)]);
+                                                    _ -> io:format("~n*** Error en la recepción del GameId", [])
+                                                end;
+                                            {tcp, Sock, "not_accepted"} -> io:format("~n*** Error: la partida ya está en juego~n~n", [])
                                          end,
                                          client_loop(Sock, CmdN + 1, UserName);
                 {tcp, Sock, "pla"}    -> receive
@@ -58,7 +63,7 @@ client_loop(Sock, CmdN, UserName) ->
                                                     {tcp, Sock, Table} ->
                                                         print_table(Table),
                                                         client_loop(Sock, CmdN + 1, UserName);
-                                                    _ -> io:format("~nError en la recepción de la tabla luego del comando PLA~n~n", [])
+                                                    _ -> io:format("~n*** Error en la recepción de la tabla luego del comando PLA~n~n", [])
                                                 end;
                                             {tcp, Sock, "not_allowed"} ->
                                                 io:format("~nxxx Jugada ilegal xxx~n~n", [])

@@ -64,7 +64,7 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                     spawn(Node, ?MODULE, pCommand, [Data, UserName, nil, self()]);
                 _ -> {error, not_supported}
             end;
-        {pCommand, Msg} ->
+        {pCommand, Msg}  ->
             case Msg of
                 {valid_username, UName} -> ok = gen_tcp:send(Sock, "valid_username"),
                                            pSocket_loop(Sock, PidBalance, UName);
@@ -79,7 +79,11 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                 {acc, AccMsg, CmdId}    -> ok = gen_tcp:send(Sock, "acc"),
                                            case AccMsg of
                                               not_exists -> ok = gen_tcp:send(Sock, "not_exists");
-                                              acc        -> ok = gen_tcp:send(Sock, "accepted");
+                                              acc        -> 
+                                                ok = gen_tcp:send(Sock, "accepted"),
+                                                receive 
+                                                    {gameid, GameId} -> ok = gen_tcp:send(Sock, erlang:integer_to_list(GameId))
+                                                end; 
                                               not_acc    -> ok = gen_tcp:send(Sock, "not_accepted")
                                            end;
                 {pla, Result}           -> ok = gen_tcp:send(Sock, "pla"),
@@ -98,10 +102,12 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                            ok = gen_tcp:send(Sock, Default)
             end;
         {tcp_closed, Sock} ->
-                delete_by_username(UserName),
-                delete_username(UserName),
-                io:format("El usuario se ha desconectado~n");
-        Default -> io:format("Error en el mensaje ~p~n", [Default])
+            delete_by_username(UserName),
+            delete_username(UserName),
+            io:format("El usuario se ha desconectado~n");
+        Default           -> 
+            io:format("Error en el mensaje ~p~n", [Default]),
+            ok = gen_tcp:send(Sock, "wrong_command")
     end,
     pSocket_loop(Sock, PidBalance, UserName). 
 
@@ -154,7 +160,6 @@ pStat() ->
 %% pCommand
 %% Llama a las funciones pertinentes a los comandos
 pCommand(Command, PlayerId, GameId, PSocket) ->
-    %io:format("Me crearon en el nodo ~p ~n", [node()]),
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
         ["CON", UserName]         -> cmd_con(PSocket, UserName);
@@ -164,6 +169,6 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
         ["PLA", GId, Play, CmdId] -> cmd_pla(PSocket, erlang:list_to_integer(GId), Play, PlayerId, CmdId);
 %        ["OBS", CmdId, GameId]       ->
 %        ["LEA", CmdId, GameId]       ->
-        ["BYE"]             -> cmd_bye(PSocket, PlayerId); 
+        ["BYE"]                   -> cmd_bye(PSocket, PlayerId); 
         _ -> PSocket ! "command_not_implemented"
     end.

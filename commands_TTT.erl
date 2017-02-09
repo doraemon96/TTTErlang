@@ -53,6 +53,7 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
                      []   -> PSocket ! {pCommand, {acc, not_exists, CmdId}};
                      [G]  -> case erlang:element(4, G) of
                                 "*waiting*" -> PSocket ! {pCommand, {acc, acc, CmdId}},
+                                               PSocket ! {gameid, GameId},
                                                mnesia:write(G#game{user2=UserName});
                                 _           -> PSocket ! {pCommand, {acc, not_acc, CmdId}}
                              end
