@@ -69,8 +69,8 @@ get_game_players(GameId) ->
 
 %% set_game_table 
 %% Cambia el tablero segun una jugada y devuelve true si la jugada fue
-%%  posible, y false si no.
-set_game_table(GameId, Table, UserName) ->
+%% posible, y false si no.
+set_game_table(PCmd, GameId, Table, UserName) ->
     OldTable   = get_game_table(GameId),
     IsTurn     = is_turn(GameId, OldTable, UserName),
     if IsTurn -> 
@@ -78,7 +78,8 @@ set_game_table(GameId, Table, UserName) ->
             true  -> false;
             false -> F = fun() ->
                             [R] = mnesia:wread({game, GameId}), 
-                            mnesia:write(R#game{table = Table})
+                            mnesia:write(R#game{table = Table}),
+                            PCmd ! {table, Table}
                          end,
                      mnesia:activity(transaction, F),
                      true
@@ -139,13 +140,15 @@ table_checkdiagonal(Table) ->
 %%
 make_play(UserName, GameId, Play) ->
     OldTable = get_game_table(GameId),
-    [H | T] = Play,
+    {U1, U2} = get_game_players(GameId),
+    Num      = if UserName == U1 -> 1; true -> 2 end,
+    [H | T]  = Play,
     case H of
         97  -> X2 = erlang:list_to_integer(T),
                B  = (X2 < 4) and (X2 > 0),
                    if B -> L2 = lists:nth(2, OldTable),
                            L3 = lists:nth(3, OldTable),
-                           L1 = set_nth_list(lists:nth(1, OldTable), X2, 1),
+                           L1 = set_nth_list(lists:nth(1, OldTable), X2, Num),
                            [L1, L2, L3];
                       true -> error1
                    end;
@@ -153,7 +156,7 @@ make_play(UserName, GameId, Play) ->
                B  = (X2 < 4) and (X2 > 0),
                    if B -> L1 = lists:nth(1, OldTable),
                            L3 = lists:nth(3, OldTable),
-                           L2 = set_nth_list(lists:nth(2, OldTable), X2, 1),
+                           L2 = set_nth_list(lists:nth(2, OldTable), X2, Num),
                            [L1, L2, L3];
                       true -> error2
                    end;
@@ -161,7 +164,7 @@ make_play(UserName, GameId, Play) ->
                B  = (X2 < 4) and (X2 > 0),
                    if B -> L1 = lists:nth(1, OldTable),
                            L2 = lists:nth(2, OldTable),
-                           L3 = set_nth_list(lists:nth(3, OldTable), X2, 1),
+                           L3 = set_nth_list(lists:nth(3, OldTable), X2, Num),
                            [L1, L2, L3];
                       true -> error3
                    end;

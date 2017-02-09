@@ -42,7 +42,7 @@ client_loop(Sock, CmdN, UserName) ->
                                          lsg_loop(Sock),
                                          client_loop(Sock, CmdN + 1, UserName);
                 {tcp, Sock, "new_ok"} -> receive
-                                            {tcp, Sock, ID} -> io:format("~n ***Nueva partida creada con ID: ~p***~n~n", [erlang:list_to_integer(ID)])
+                                            {tcp, Sock, ID} -> io:format("~n***Nueva partida creada con ID: ~p***~n~n", [erlang:list_to_integer(ID)])
                                                                %spawn(?MODULE, new_game, [ID])
                                          end, 
                                          client_loop(Sock, CmdN + 1, UserName);
@@ -54,8 +54,12 @@ client_loop(Sock, CmdN, UserName) ->
                                          client_loop(Sock, CmdN + 1, UserName);
                 {tcp, Sock, "pla"}    -> receive
                                             {tcp, Sock, "success"} ->
-                                                print_table([[0, 0, 0], [0, 0, 0], [0, 0, 0]]),
-                                                client_loop(Sock, CmdN + 1, UserName);
+                                                receive 
+                                                    {tcp, Sock, Table} ->
+                                                        print_table(Table),
+                                                        client_loop(Sock, CmdN + 1, UserName);
+                                                    _ -> io:format("~nError en la recepción de la tabla luego del comando PLA~n~n", [])
+                                                end;
                                             {tcp, Sock, "not_allowed"} ->
                                                 io:format("~nxxx Jugada ilegal xxx~n~n", [])
                                          end,
