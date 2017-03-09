@@ -3,10 +3,11 @@
 %% create_game
 %%
 %% TODO
-create_game(GameId, UName) ->
+create_game(GameId, UName, PSocket) ->
     F = fun() ->
             mnesia:write(#game{gameid=GameId,
-                               user1=UName})
+                               user1=UName,
+                               sock1=PSocket})
         end,
     mnesia:activity(transaction, F).
 

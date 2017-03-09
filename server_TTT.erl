@@ -98,6 +98,10 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                             _           -> io:format("Error en el mensaje PLA ~n", [])
                                            end;
                 bye                     -> ok = gen_tcp:send(Sock, "bye");
+                {update, UpMsg, GId}    -> case UpMsg of
+                                               acc -> ok = gen_tcp:send(Sock, "updateacc" ++ erlang:integer_to_list(GId));
+                                               _   -> error_not_implemented
+                                           end;
                 Default                 -> io:format("Error en mensaje de pCommand ~p ~n", [Default]),
                                            ok = gen_tcp:send(Sock, Default)
             end;

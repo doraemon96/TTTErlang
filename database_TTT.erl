@@ -1,6 +1,12 @@
 -compile(export_all).
 
--record(game, {gameid, user1, user2 = "*waiting*", table = [[0,0,0],[0,0,0],[0,0,0]]}).
+-record(game, {gameid, 
+               user1, 
+               sock1,
+               user2 = "*waiting*", 
+               sock2,
+               table = [[0,0,0],[0,0,0],[0,0,0]], 
+               observers}).
 -record(user, {name, empty}).
 
 %% *************************************************************** %%

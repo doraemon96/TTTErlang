@@ -20,7 +20,7 @@ cmd_con(PSocket, UserName) ->
 %% TODO
 cmd_lsg(PSocket, CmdId) ->
     GamesList  = list_games(),
-    GamesList2 = lists:map(fun({_ , X, Y, Z, _}) -> erlang:integer_to_list(X) ++ " " 
+    GamesList2 = lists:map(fun({_ , X, Y, _, Z, _, _, _}) -> erlang:integer_to_list(X) ++ " " 
                                                     ++ Y ++ " " 
                                                     ++ Z end, GamesList),
     PSocket ! {pCommand, {lsg, GamesList2, CmdId}},
@@ -36,9 +36,9 @@ cmd_new(PSocket, PlayerId, CmdId) ->
         end,
     Ids = mnesia:activity(transaction, F),
     case Ids of
-        [] -> create_game(1, PlayerId),
+        [] -> create_game(1, PlayerId, PSocket),
               PSocket ! {pCommand, {new_ok, 1, CmdId}};
-        _  -> create_game(ID = lists:max(Ids) + 1, PlayerId),
+        _  -> create_game(ID = lists:max(Ids) + 1, PlayerId, PSocket),
               PSocket ! {pCommand, {new_ok, ID, CmdId}}
     end,
     ok.
@@ -51,10 +51,13 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
     F = fun() -> R = mnesia:read({game, GameId}),
                  case R of
                      []   -> PSocket ! {pCommand, {acc, not_exists, CmdId}};
-                     [G]  -> case erlang:element(4, G) of
+                     [G]  -> case erlang:element(5, G) of
                                 "*waiting*" -> PSocket ! {pCommand, {acc, acc, CmdId}},
                                                PSocket ! {gameid, GameId},
-                                               mnesia:write(G#game{user2=UserName});
+                                               mnesia:write(G#game{user2=UserName,
+                                                                   sock2=PSocket}),
+                                               io:format("~p~n",[erlang:element(4,G)]),
+                                               erlang:element(4, G) ! {pCommand, {update, acc, erlang:element(2, G)}};
                                 _           -> PSocket ! {pCommand, {acc, not_acc, CmdId}}
                              end
                  end
