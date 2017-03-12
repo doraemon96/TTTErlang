@@ -7,7 +7,8 @@
 %% TODO
 cmd_con(PSocket, UserName) ->
     case exists_username(UserName) of
-        true  -> PSocket ! {pCommand, invalid_username}; 
+        true  -> 
+            PSocket ! {pCommand, invalid_username}; 
         false ->
             add_username(UserName), 
             PSocket ! {pCommand, {valid_username, UserName}}
@@ -36,10 +37,12 @@ cmd_new(PSocket, PlayerId, CmdId) ->
         end,
     Ids = mnesia:activity(transaction, F),
     case Ids of
-        [] -> create_game(1, PlayerId, PSocket),
-              PSocket ! {pCommand, {new_ok, 1, CmdId}};
-        _  -> create_game(ID = lists:max(Ids) + 1, PlayerId, PSocket),
-              PSocket ! {pCommand, {new_ok, ID, CmdId}}
+        [] -> 
+            create_game(1, PlayerId, PSocket),
+            PSocket ! {pCommand, {new_ok, 1, CmdId}};
+        _  ->
+            create_game(ID = lists:max(Ids) + 1, PlayerId, PSocket),
+            PSocket ! {pCommand, {new_ok, ID, CmdId}}
     end,
     ok.
     
@@ -50,16 +53,18 @@ cmd_new(PSocket, PlayerId, CmdId) ->
 cmd_acc(PSocket, GameId, UserName, CmdId) ->
     F = fun() -> R = mnesia:read({game, GameId}),
                  case R of
-                     []   -> PSocket ! {pCommand, {acc, not_exists, CmdId}};
-                     [G]  -> case erlang:element(5, G) of
-                                "*waiting*" -> PSocket ! {pCommand, {acc, acc, CmdId}},
-                                               PSocket ! {gameid, GameId},
-                                               mnesia:write(G#game{user2=UserName,
-                                                                   sock2=PSocket}),
-                                               io:format("~p~n",[erlang:element(4,G)]),
-                                               erlang:element(4, G) ! {pCommand, {update, acc, erlang:element(2, G)}};
-                                _           -> PSocket ! {pCommand, {acc, not_acc, CmdId}}
-                             end
+                     []   -> 
+                        PSocket ! {pCommand, {acc, not_exists, CmdId}};
+                     [G]  -> 
+                        case erlang:element(5, G) of
+                            "*waiting*" -> PSocket ! {pCommand, {acc, acc, CmdId}},
+                                           PSocket ! {gameid, GameId},
+                                           mnesia:write(G#game{user2=UserName,
+                                                               sock2=PSocket}),
+                                           io:format("~p~n",[erlang:element(4,G)]),
+                                           erlang:element(4, G) ! {pCommand, {update, acc, erlang:element(2, G)}};
+                            _           -> PSocket ! {pCommand, {acc, not_acc, CmdId}}
+                        end
                  end
         end,
     mnesia:activity(transaction, F), 
@@ -73,7 +78,8 @@ cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
     if 
         SetGameTable -> PSocket ! {pCommand, {pla, success}},
                         receive
-                            {table, Table} -> PSocket ! {table, Table}
+                            {table, Table} -> 
+                                PSocket ! {table, Table}
                         end;
         true         -> PSocket ! {pCommand, {pla, not_allowed}}
     end,

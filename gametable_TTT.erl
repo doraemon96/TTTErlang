@@ -47,8 +47,10 @@ delete_by_username(UName) ->
 get_game_table(GameId) ->
     F = fun() ->
             case mnesia:read({game, GameId}) of
-                [T] -> erlang:element(5, T);
-                _   -> []
+                [T] -> 
+                    erlang:element(5, T);
+                _   -> 
+                    []
             end
         end,
     mnesia:activity(transaction, F).
@@ -59,10 +61,12 @@ get_game_table(GameId) ->
 get_game_players(GameId) ->
     F = fun() ->
             case mnesia:read({game, GameId}) of
-                [T] -> U1 = erlang:element(3, T),
-                       U2 = erlang:element(4, T),
-                       {U1, U2};
-                _   -> []
+                [T] -> 
+                    U1 = erlang:element(3, T),
+                    U2 = erlang:element(4, T),
+                    {U1, U2};
+                _   -> 
+                    []
             end
         end,
     mnesia:activity(transaction, F).
@@ -127,10 +131,12 @@ get_game_status(Game) ->
 table_checkrow(Table) ->
     Fea = lists:foreach(fun(X) -> (lists:nth(1,X) == lists:nth(2,X)) and (lists:nth(2,X) == lists:nth(3,X)) end, Table),
     lists:any(fun(X) -> X end, Fea).
+
 table_checkcol(Table) ->
     Zip = lists:zip(lists:nth(1,Table), lists:nth(2,Table), lists:nth(3,Table)),
     Fea = lists:foreach(fun(X) -> (element(1,X) == element(2,X)) and (element(2,X) == element(3,X)) end),
     lists:any(fun(X) -> X end, Fea).
+
 table_checkdiagonal(Table) ->
     Diag1 = (element(1, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(3, lists:nth(3,Table))),
     Diag2 = (element(3, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(1, lists:nth(3,Table))),
@@ -145,39 +151,45 @@ make_play(UserName, GameId, Play) ->
     Num      = if UserName == U1 -> 1; true -> 2 end,
     [H | T]  = Play,
     case H of
-        97  -> X2 = erlang:list_to_integer(T),
-               B  = (X2 < 4) and (X2 > 0),
-                   if B -> L2 = lists:nth(2, OldTable),
-                           L3 = lists:nth(3, OldTable),
-                           L1 = set_nth_list(lists:nth(1, OldTable), X2, Num),
-                           [L1, L2, L3];
-                      true -> error1
-                   end;
-        98  -> X2 = erlang:list_to_integer(T),
-               B  = (X2 < 4) and (X2 > 0),
-                   if B -> L1 = lists:nth(1, OldTable),
-                           L3 = lists:nth(3, OldTable),
-                           L2 = set_nth_list(lists:nth(2, OldTable), X2, Num),
-                           [L1, L2, L3];
-                      true -> error2
-                   end;
-        99  -> X2 = erlang:list_to_integer(T),
-               B  = (X2 < 4) and (X2 > 0),
-                   if B -> L1 = lists:nth(1, OldTable),
-                           L2 = lists:nth(2, OldTable),
-                           L3 = set_nth_list(lists:nth(3, OldTable), X2, Num),
-                           [L1, L2, L3];
-                      true -> error3
-                   end;
-        _ -> error
+        97  -> 
+            X2 = erlang:list_to_integer(T),
+            B  = (X2 < 4) and (X2 > 0),
+            if B -> L2 = lists:nth(2, OldTable),
+                    L3 = lists:nth(3, OldTable),
+                    L1 = set_nth_list(lists:nth(1, OldTable), X2, Num),
+                    [L1, L2, L3];
+               true -> error1
+            end;
+        98  -> 
+            X2 = erlang:list_to_integer(T),
+            B  = (X2 < 4) and (X2 > 0),
+            if B -> L1 = lists:nth(1, OldTable),
+                    L3 = lists:nth(3, OldTable),
+                    L2 = set_nth_list(lists:nth(2, OldTable), X2, Num),
+                    [L1, L2, L3];
+               true -> error2
+            end;
+        99  -> 
+            X2 = erlang:list_to_integer(T),
+            B  = (X2 < 4) and (X2 > 0),
+            if B -> L1 = lists:nth(1, OldTable),
+                    L2 = lists:nth(2, OldTable),
+                    L3 = set_nth_list(lists:nth(3, OldTable), X2, Num),
+                    [L1, L2, L3];
+               true -> error3
+            end;
+        _ -> 
+            error
     end.
         %"b" ++ X -> list_to_integer(X)
         %"c" ++ X -> list_to_integer(X)
 
 set_nth_list([H | T], Number, Element) ->
     case Number of
-        1 -> [Element] ++ T;
-        _ -> [H] ++ set_nth_list(T, Number - 1, Element)
+        1 -> 
+            [Element] ++ T;
+        _ -> 
+            [H] ++ set_nth_list(T, Number - 1, Element)
     end.
         
     

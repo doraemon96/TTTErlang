@@ -49,8 +49,10 @@ add_username(UName) ->
 exists_username(UName) ->
     F = fun() ->
             case mnesia:read({user, UName}) of 
-                [] -> false;
-                _  -> true
+                [] -> 
+                    false;
+                _  -> 
+                    true
             end
         end,
     mnesia:activity(transaction, F). 

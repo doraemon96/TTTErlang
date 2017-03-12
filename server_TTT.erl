@@ -130,10 +130,12 @@ pBalance(Queue, Reductions, Node) ->
         %% Si recibimos información de un pstat, comparamos con el mejor postor que tenemos
         {pStat, {New_Queue, New_Reductions}, New_Node} ->
             case Queue > New_Queue of
-                true  -> pBalance(New_Queue, New_Reductions, New_Node);
+                true  -> 
+                    pBalance(New_Queue, New_Reductions, New_Node);
                 false ->
                     case Queue < New_Queue of 
-                        true  -> pBalance(Queue, Reductions, Node);
+                        true  -> 
+                            pBalance(Queue, Reductions, Node);
                         false ->
                             case Reductions > New_Reductions of
                                 true  -> pBalance(New_Queue, New_Reductions, New_Node);

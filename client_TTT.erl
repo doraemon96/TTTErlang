@@ -6,28 +6,32 @@ client(Host) ->
     case username_loop(Sock) of
         {username, UserName} -> 
             client_loop(Sock, 1, UserName, self());
-        _ -> {error, not_supported}
+        _ -> 
+            {error, not_supported}
     end.
 
 username_loop(Sock) ->
     io:format("Ingrese nombre de usuario: "),
     UserName = string:strip(io:get_line(""), right, $\n),
-    ok = gen_tcp:send(Sock, "CON "++UserName),
+    ok       = gen_tcp:send(Sock, "CON "++UserName),
     receive
         {tcp, Sock, "valid_username"} -> 
             {username, UserName};
         {tcp, Sock, "invalid_username"} ->
             io:format("Usuario en uso.~n"),
             username_loop(Sock);
-        _ -> {error, not_supported}
+        _ -> 
+            {error, not_supported}
     end.
 
 updater(Sock, PCLoop) ->
     receive 
         {tcp, Sock, Msg} ->
             case Msg of
-                "update" ++ V -> io:format("~p~n", [V]);
-                _             -> PCLoop ! {tcp, Sock, Msg}
+                "update" ++ V -> 
+                    io:format("~p~n", [V]);
+                _             -> 
+                    PCLoop ! {tcp, Sock, Msg}
             end; 
         S                ->
             ok = gen_tcp:send(Sock, S)
@@ -36,14 +40,17 @@ updater(Sock, PCLoop) ->
 
 client_loop(Sock, CmdN, UserName, UPPid) -> 
     case CmdN of
-        0 -> ok;
-        1 -> Pid = spawn(?MODULE, updater, [Sock, self()]),
-             gen_tcp:controlling_process(Sock, Pid),
-             client_loop(Sock, CmdN + 1, UserName, Pid);
-        _ -> Data = string:strip(io:get_line("Comando: "), right, $\n), 
-             io:format("Command ID: {~p, ~p} ~n", [UserName, CmdN]),
-             UPPid ! Data ++ " " ++ UserName ++ erlang:integer_to_list(CmdN),
-             receive
+        0 -> 
+            ok;
+        1 -> 
+            Pid = spawn(?MODULE, updater, [Sock, self()]),
+            gen_tcp:controlling_process(Sock, Pid),
+            client_loop(Sock, CmdN + 1, UserName, Pid);
+        _ -> 
+            Data = string:strip(io:get_line("Comando: "), right, $\n), 
+            io:format("Command ID: {~p, ~p} ~n", [UserName, CmdN]),
+            UPPid ! Data ++ " " ++ UserName ++ erlang:integer_to_list(CmdN),
+            receive
                 {tcp, Sock, "lsg"}    -> 
                     receive 
                         {tcp, Sock, "cmdid"} -> 
@@ -60,7 +67,8 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                     client_loop(Sock, CmdN + 1, UserName, UPPid);
                 {tcp, Sock, "new_ok"} -> 
                     receive
-                        {tcp, Sock, ID} -> io:format("~n***Nueva partida creada con ID: ~p***~n~n", [erlang:list_to_integer(ID)])
+                        {tcp, Sock, ID} -> 
+                            io:format("~n***Nueva partida creada con ID: ~p***~n~n", [erlang:list_to_integer(ID)])
                                            %spawn(?MODULE, new_game, [ID])
                     end, 
                     client_loop(Sock, CmdN + 1, UserName, UPPid);
@@ -74,7 +82,8 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                                     io:format("~n||| Bienvenido al juego ~p |||~n~n", [erlang:list_to_integer(GameId)]);
                                     _ -> io:format("~n*** Error en la recepción del GameId", [])
                             end;
-                        {tcp, Sock, "not_accepted"} -> io:format("~n*** Error: la partida ya está en juego~n~n", [])
+                        {tcp, Sock, "not_accepted"} -> 
+                            io:format("~n*** Error: la partida ya está en juego~n~n", [])
                     end,
                     client_loop(Sock, CmdN + 1, UserName, UPPid);
                 {tcp, Sock, "pla"}    -> 
@@ -84,7 +93,8 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                                 {tcp, Sock, Table} ->
                                     print_table(Table),
                                     client_loop(Sock, CmdN + 1, UserName, UPPid);
-                                    _ -> io:format("~n*** Error en la recepción de la tabla luego del comando PLA~n~n", [])
+                                    _ -> 
+                                        io:format("~n*** Error en la recepción de la tabla luego del comando PLA~n~n", [])
                             end;
                         {tcp, Sock, "not_allowed"} ->
                             io:format("~nxxx Jugada ilegal xxx~n~n", [])
@@ -111,24 +121,28 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
 %%
 lsg_loop(Sock) ->
     receive
-        {tcp, Sock, "end"} -> ok;
-        {tcp, Sock, List}  -> Data = string:tokens(List, " "),
-                              lists:foreach(fun(X) -> io:format(string:centre(X, 22), []) end, Data),
-                              io:format("~n", []),
-                              lsg_loop(Sock);
-        _                  -> io:format("WTH? ~n"),
-                              lsg_loop(Sock)
+        {tcp, Sock, "end"} -> 
+            ok;
+        {tcp, Sock, List}  -> 
+            Data = string:tokens(List, " "),
+            lists:foreach(fun(X) -> io:format(string:centre(X, 22), []) end, Data),
+            io:format("~n", []),
+            lsg_loop(Sock);
+        _                  -> 
+            io:format("WTH? ~n"),
+            lsg_loop(Sock)
     end,
     ok.
 
 %¦
 print_table(Table) ->
-    F  = fun(X) -> case X of
-                    0 -> " ";
-                    1 -> "X";
-                    2 -> "O";
-                    _ -> ""
-                   end
+    F  = fun(X) -> 
+            case X of
+                0 -> " ";
+                1 -> "X";
+                2 -> "O";
+                _ -> ""
+            end
          end,
     [A1, B1, C1, A2, B2, C2, A3, B3, C3] = lists:map(F, lists:flatten(Table)),
     S1 = "    1   2   3 ~n",
