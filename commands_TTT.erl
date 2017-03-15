@@ -91,7 +91,11 @@ cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
                                                 {table, Table} -> 
                                                     PSocket ! {table, Table},
                                                     erlang:element(P, G) ! {pCommand, {update, pla, erlang:element(2, G)}},
-                                                    erlang:element(P, G) ! {table, Table}
+                                                    erlang:element(P, G) ! {table, Table},
+                                                    Observers = erlang:element(8, G),
+                                                    foreach(fun(X) -> X ! {pCommand, {update, obs, erlang:element(2, G)}},
+                                                                      X ! {table, Table} end, Observers),
+                                                    
                                             end;
                             true         -> PSocket ! {pCommand, {pla, not_allowed}}
                         end
@@ -103,8 +107,15 @@ cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
 %% OBS
 %%
 %% TODO
-cmd_obs() ->
-    ok.
+cmd_obs(PSocket, GameId) ->
+    F = fun() -> R = mnesia:read({game, GameId}),
+                 case R of
+                     []   -> 
+                        PSocket ! {pCommand, {obs, not_exists}};
+                     [G]  -> 
+                        Observers = [PSocket | erlang:element(8, G)],
+                        mnesia:write(G#game{observers=Observers}),
+                        PSocket ! {pCommand, {obs, success}}
 
 %% LEA
 %%

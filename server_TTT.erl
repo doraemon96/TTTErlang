@@ -89,18 +89,35 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                 {pla, Result}           -> ok = gen_tcp:send(Sock, "pla"),
                                            case Result of 
                                             success     -> 
+                                                ok = gen_tcp:send(Sock, "success"),
                                                 receive 
                                                     {table, Table} ->
-                                                        ok = gen_tcp:send(Sock, "success"),
                                                         ok = gen_tcp:send(Sock, Table)
                                                 end;
                                             not_allowed -> ok = gen_tcp:send(Sock, "not_allowed");
                                             _           -> io:format("Error en el mensaje PLA ~n", [])
                                            end;
+                {obs, Result}           -> ok = gen_tcp:send(Sock, "obs"),
+                                           case Result of
+                                            success -> 
+                                                ok = gen_tcp:send(Sock, "success"),
+                                                receive 
+                                                    {table, Table} -> 
+                                                        ok = gen_tcp:send(Sock, Table)
+                                                end;
+                                            not_exists -> 
+                                                ok = gen_tcp:send(Sock, "not_exists")
+                                           end;         
                 bye                     -> ok = gen_tcp:send(Sock, "bye");
                 {update, UpMsg, GId}    -> case UpMsg of
                                                acc -> ok = gen_tcp:send(Sock, "updateacc" ++ erlang:integer_to_list(GId));
                                                pla -> ok = gen_tcp:send(Sock, "updatepla" ++ erlang:integer_to_list(GId)),
+                                                      receive 
+                                                         {table, Table} ->   
+                                                            ok = gen_tcp:send(Sock, Table);
+                                                         _ -> error
+                                                      end;
+                                               obs -> ok = gen_tcp:send(Sock, "updateobs" ++ erlang:integer_to_list(GId)),
                                                       receive 
                                                          {table, Table} ->   
                                                             ok = gen_tcp:send(Sock, Table);
@@ -179,7 +196,7 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
         ["NEW", CmdId]            -> cmd_new(PSocket, PlayerId, CmdId);
         ["ACC", GId, CmdId]       -> cmd_acc(PSocket, erlang:list_to_integer(GId), PlayerId, CmdId);
         ["PLA", GId, Play, CmdId] -> cmd_pla(PSocket, erlang:list_to_integer(GId), Play, PlayerId, CmdId);
-%        ["OBS", CmdId, GameId]       ->
+        ["OBS", CmdId, GameId]    -> cmd_obs(PSocket, GameId);
 %        ["LEA", CmdId, GameId]       ->
         ["BYE", CmdId]                   -> cmd_bye(PSocket, PlayerId); 
         _ -> PSocket ! "command_not_implemented"

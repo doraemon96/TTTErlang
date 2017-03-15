@@ -36,6 +36,12 @@ updater(Sock, PCLoop) ->
                         {tcp, Sock, Table} ->
                             print_table(Table)
                     end;
+                "updateobs" ++ GId ->
+                    io:format("Actualización en partida ~p~n", [GId]),
+                    receive
+                        {tcp, Sock, Table} ->
+                            print_table(Table)
+                    end;
                 _ ->            
                     PCLoop ! {updater, Msg}
             end; 
@@ -106,6 +112,17 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                             io:format("~nxxx Jugada ilegal xxx~n~n", [])
                     end,
                     client_loop(Sock, CmdN + 1, UserName, UPPid);    
+                {updater, "obs"}    ->
+                    receive 
+                        {updater, "success"} ->
+                            receive 
+                                {updater, Table} ->
+                                    print_table(Table),
+                                    client_loop(Sock, CmdN + 1, UserName, UPPid);
+                            end;
+                        {updater, "not_exists"} ->
+                            io:format("La partida seleccionada no existe~n", [])
+                    end;
                 {updater, "bye"}    -> 
                     io:format("~n||| ¡Hasta luego! |||~n~n", []),
                     ok = gen_tcp:close(Sock),
