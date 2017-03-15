@@ -118,11 +118,12 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                             receive 
                                 {updater, Table} ->
                                     print_table(Table),
-                                    client_loop(Sock, CmdN + 1, UserName, UPPid);
+                                    client_loop(Sock, CmdN + 1, UserName, UPPid)
                             end;
                         {updater, "not_exists"} ->
                             io:format("La partida seleccionada no existe~n", [])
-                    end;
+                    end,
+                    client_loop(Sock, CmdN + 1, UserName, UPPid);
                 {updater, "bye"}    -> 
                     io:format("~n||| ¡Hasta luego! |||~n~n", []),
                     ok = gen_tcp:close(Sock),

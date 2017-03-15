@@ -196,7 +196,7 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
         ["NEW", CmdId]            -> cmd_new(PSocket, PlayerId, CmdId);
         ["ACC", GId, CmdId]       -> cmd_acc(PSocket, erlang:list_to_integer(GId), PlayerId, CmdId);
         ["PLA", GId, Play, CmdId] -> cmd_pla(PSocket, erlang:list_to_integer(GId), Play, PlayerId, CmdId);
-        ["OBS", CmdId, GameId]    -> cmd_obs(PSocket, GameId);
+        ["OBS", GId, CmdId]       -> cmd_obs(PSocket, erlang:list_to_integer(GId));
 %        ["LEA", CmdId, GameId]       ->
         ["BYE", CmdId]                   -> cmd_bye(PSocket, PlayerId); 
         _ -> PSocket ! "command_not_implemented"
