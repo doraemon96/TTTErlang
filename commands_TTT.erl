@@ -74,16 +74,31 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
 %%
 %% TODO
 cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
-    SetGameTable = set_game_table(self(), GameId, make_play(UserName, GameId, Play), UserName),
-    if 
-        SetGameTable -> PSocket ! {pCommand, {pla, success}},
-                        receive
-                            {table, Table} -> 
-                                PSocket ! {table, Table}
-                        end;
-        true         -> PSocket ! {pCommand, {pla, not_allowed}}
-    end,
-    ok. 
+    F = fun() -> R = mnesia:read({game, GameId}),
+                 case R of
+                    [] -> 
+                        PSocket ! {pCommand, {pla, not_allowed}};
+                    [G] ->
+                        SetGameTable = set_game_table(self(), GameId, make_play(UserName, GameId, Play), UserName),
+                        {U1, U2} = get_game_players(GameId), 
+                        P = if 
+                                UserName == U1 -> 6;
+                                true -> 4
+                            end,
+                        if 
+                            SetGameTable -> PSocket ! {pCommand, {pla, success}},
+                                            receive
+                                                {table, Table} -> 
+                                                    PSocket ! {table, Table},
+                                                    erlang:element(P, G) ! {pCommand, {update, pla, erlang:element(2, G)}},
+                                                    erlang:element(P, G) ! {table, Table}
+                                            end;
+                            true         -> PSocket ! {pCommand, {pla, not_allowed}}
+                        end
+                 end
+        end,
+    mnesia:activity(transaction, F),
+    ok.  
 
 %% OBS
 %%

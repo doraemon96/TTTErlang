@@ -28,10 +28,16 @@ updater(Sock, PCLoop) ->
     receive 
         {tcp, Sock, Msg} ->
             case Msg of
-                "update" ++ V -> 
-                    io:format("~p~n", [V]);
-                _             -> 
-                    PCLoop ! {tcp, Sock, Msg}
+                "updateacc" ++ GId -> 
+                    io:format("Su partida con ID ~p ha sido aceptada: ES SU TURNO~n", [GId]);
+                "updatepla" ++ GId ->
+                    io:format("Partida ~p: ES SU TURNO~n", [GId]),
+                    receive
+                        {tcp, Sock, Table} ->
+                            print_table(Table)
+                    end;
+                _ ->            
+                    PCLoop ! {updater, Msg}
             end; 
         S                ->
             ok = gen_tcp:send(Sock, S)
@@ -51,11 +57,11 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
             io:format("Command ID: {~p, ~p} ~n", [UserName, CmdN]),
             UPPid ! Data ++ " " ++ UserName ++ erlang:integer_to_list(CmdN),
             receive
-                {tcp, Sock, "lsg"}    -> 
+                {updater, "lsg"}    -> 
                     receive 
-                        {tcp, Sock, "cmdid"} -> 
+                        {updater, "cmdid"} -> 
                             receive
-                                {tcp, Sock, CmdId} ->
+                                {updater, CmdId} ->
                                     io:format("~nLSG response ~p ~n~n", [CmdId])
                             end
                     end,
@@ -63,47 +69,44 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                     io:format(string:centre("Player 1", 22), []),
                     io:format(string:centre("Player 2", 22), []),
                     io:format("~n", []),
-                    lsg_loop(Sock),
+                    lsg_loop(),
                     client_loop(Sock, CmdN + 1, UserName, UPPid);
-                {tcp, Sock, "new_ok"} -> 
+                {updater, "new_ok"} -> 
                     receive
-                        {tcp, Sock, ID} -> 
+                        {updater, ID} -> 
                             io:format("~n***Nueva partida creada con ID: ~p***~n~n", [erlang:list_to_integer(ID)])
                                            %spawn(?MODULE, new_game, [ID])
                     end, 
                     client_loop(Sock, CmdN + 1, UserName, UPPid);
-                {tcp, Sock, "acc"}    -> 
+                {updater, "acc"}    -> 
                     receive
-                        {tcp, Sock, "not_exists"} -> 
+                        {updater, "not_exists"} -> 
                             io:format("~n*** Error: la partida no existe~n~n", []);
-                        {tcp, Sock, "accepted"}   -> 
+                        {updater, "accepted"}   -> 
                             receive
-                                {tcp, Sock, GameId} ->
+                                {updater, GameId} ->
                                     io:format("~n||| Bienvenido al juego ~p |||~n~n", [erlang:list_to_integer(GameId)]);
                                     _ -> io:format("~n*** Error en la recepción del GameId", [])
                             end;
-                        {tcp, Sock, "not_accepted"} -> 
+                        {updater, "not_accepted"} -> 
                             io:format("~n*** Error: la partida ya está en juego~n~n", [])
                     end,
                     client_loop(Sock, CmdN + 1, UserName, UPPid);
-                {tcp, Sock, "pla"}    -> 
+                {updater, "pla"}    -> 
                     receive
-                        {tcp, Sock, "success"} ->
+                        {updater, "success"} ->
                             receive 
-                                {tcp, Sock, Table} ->
+                                {updater, Table} ->
                                     print_table(Table),
                                     client_loop(Sock, CmdN + 1, UserName, UPPid);
                                     _ -> 
                                         io:format("~n*** Error en la recepción de la tabla luego del comando PLA~n~n", [])
                             end;
-                        {tcp, Sock, "not_allowed"} ->
+                        {updater, "not_allowed"} ->
                             io:format("~nxxx Jugada ilegal xxx~n~n", [])
                     end,
                     client_loop(Sock, CmdN + 1, UserName, UPPid);    
-                %{tcp, Sock, "updateacc" ++ GId} ->
-                 %   io:format("~nEl juego ~p fue aceptado", [GId]),
-                  %  client_loop(Sock, CmdN, UserName, UPPid); 
-                {tcp, Sock, "bye"}    -> 
+                {updater, "bye"}    -> 
                     io:format("~n||| ¡Hasta luego! |||~n~n", []),
                     ok = gen_tcp:close(Sock),
                     client_loop(Sock, 0, UserName, UPPid);
@@ -112,25 +115,23 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                     client_loop(Sock, CmdN + 1, UserName, UPPid)
              end
     end.
-    %ok = gen_tcp:close(Sock).
-    %client_loop(Sock, CmdN + 1, UserName).
 
 
 %%
 %%
 %%
-lsg_loop(Sock) ->
+lsg_loop() ->
     receive
-        {tcp, Sock, "end"} -> 
+        {updater, "end"} -> 
             ok;
-        {tcp, Sock, List}  -> 
+        {updater, List}  -> 
             Data = string:tokens(List, " "),
             lists:foreach(fun(X) -> io:format(string:centre(X, 22), []) end, Data),
             io:format("~n", []),
-            lsg_loop(Sock);
+            lsg_loop();
         _                  -> 
             io:format("WTH? ~n"),
-            lsg_loop(Sock)
+            lsg_loop()
     end,
     ok.
 

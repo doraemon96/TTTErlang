@@ -100,7 +100,13 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                 bye                     -> ok = gen_tcp:send(Sock, "bye");
                 {update, UpMsg, GId}    -> case UpMsg of
                                                acc -> ok = gen_tcp:send(Sock, "updateacc" ++ erlang:integer_to_list(GId));
-                                               _   -> error_not_implemented
+                                               pla -> ok = gen_tcp:send(Sock, "updatepla" ++ erlang:integer_to_list(GId)),
+                                                      receive 
+                                                         {table, Table} ->   
+                                                            ok = gen_tcp:send(Sock, Table);
+                                                         _ -> error
+                                                      end;
+                                                _   -> error_not_implemented
                                            end;
                 Default                 -> io:format("Error en mensaje de pCommand ~p ~n", [Default]),
                                            ok = gen_tcp:send(Sock, Default)
@@ -175,6 +181,6 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
         ["PLA", GId, Play, CmdId] -> cmd_pla(PSocket, erlang:list_to_integer(GId), Play, PlayerId, CmdId);
 %        ["OBS", CmdId, GameId]       ->
 %        ["LEA", CmdId, GameId]       ->
-        ["BYE"]                   -> cmd_bye(PSocket, PlayerId); 
+        ["BYE", CmdId]                   -> cmd_bye(PSocket, PlayerId); 
         _ -> PSocket ! "command_not_implemented"
     end.

@@ -48,7 +48,7 @@ get_game_table(GameId) ->
     F = fun() ->
             case mnesia:read({game, GameId}) of
                 [T] -> 
-                    erlang:element(5, T);
+                    erlang:element(7, T);
                 _   -> 
                     []
             end
@@ -63,7 +63,7 @@ get_game_players(GameId) ->
             case mnesia:read({game, GameId}) of
                 [T] -> 
                     U1 = erlang:element(3, T),
-                    U2 = erlang:element(4, T),
+                    U2 = erlang:element(5, T),
                     {U1, U2};
                 _   -> 
                     []
