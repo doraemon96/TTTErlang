@@ -135,9 +135,8 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
     end.
 
 
-%%
-%%
-%%
+%% lsg_loop
+%% Loop utilizado para recibir el listado de juegos disponible
 lsg_loop() ->
     receive
         {updater, "end"} -> 
@@ -153,7 +152,8 @@ lsg_loop() ->
     end,
     ok.
 
-%¦
+%% print_table
+%% Funcion preety-print para un estado de la tabla de juego.
 print_table(Table) ->
     F  = fun(X) -> 
             case X of
@@ -170,7 +170,4 @@ print_table(Table) ->
     S4 = "a   " ++ A1 ++ " ¦ " ++ B1 ++ " ¦ " ++ C1 ++ " ~n",
     S5 = "b   " ++ A2 ++ " ¦ " ++ B2 ++ " ¦ " ++ C2 ++ " ~n",
     S6 = "c   " ++ A3 ++ " ¦ " ++ B3 ++ " ¦ " ++ C3 ++ " ~n",
-    io:format("~n" ++ S1 ++ S2 ++ S4 ++ S3 ++ S5 ++ S3 ++ S6 ++ "~n~n", []). 
-
-%new_game(ID) ->
-    
+    io:format("~n" ++ S1 ++ S2 ++ S4 ++ S3 ++ S5 ++ S3 ++ S6 ++ "~n~n", []).
