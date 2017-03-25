@@ -35,18 +35,38 @@ updater(Sock, PCLoop) ->
                     receive
                         {tcp, Sock, Table} ->
                             print_table(Table)
+                    end,
+                    receive
+                        {tcp, Sock, Status} ->
+                            if Status == "won" -> io:format("~nHas perdido la partida!~n~n",[]);
+                               Status == "tie" -> io:format("~nLa partida fue un empate!~n~n",[]);
+                               true -> ok
+                            end
                     end;
                 "updateobs" ++ GId ->
                     io:format("Actualización en partida ~p~n", [GId]),
                     receive
                         {tcp, Sock, Table} ->
                             print_table(Table)
+                    end,
+                    receive
+                        {tcp, Sock, Status} ->
+                            if Status == "won" -> 
+                                    receive
+                                        {tcp, Sock, P} -> io:format("~n~pHa ganado la partida!~n~n",[P])
+                                    end;
+                               Status == "tie" -> io:format("~nLa partida fue un empate!~n~n",[]),
+                                    receive
+                                        {tcp, Sock, _} -> ok
+                                    end;
+                               true -> receive
+                                        {tcp, Sock, _} -> ok
+                                    end
+                            end
                     end;
-                _ ->            
-                    PCLoop ! {updater, Msg}
+                _ -> PCLoop ! {updater, Msg}
             end; 
-        S                ->
-            ok = gen_tcp:send(Sock, S)
+        S -> ok = gen_tcp:send(Sock, S)
     end,
     updater(Sock, PCLoop).
 
@@ -101,12 +121,21 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                 {updater, "pla"}    -> 
                     receive
                         {updater, "success"} ->
+                            io:format("SUCCES",[]),
                             receive 
                                 {updater, Table} ->
+                                    io:format("TABLA",[]),
                                     print_table(Table),
+                                    receive
+                                        {updater, Status} ->
+                                            if Status == "won" -> io:format("~nHas ganado la partida!~n~n",[]);
+                                               Status == "tie" -> io:format("~nLa partida fue un empate!~n~n",[]);
+                                               true -> ok
+                                            end
+                                    end,
                                     client_loop(Sock, CmdN + 1, UserName, UPPid);
-                                    _ -> 
-                                        io:format("~n*** Error en la recepción de la tabla luego del comando PLA~n~n", [])
+                                _ -> 
+                                    io:format("~n*** Error en la recepción de la tabla luego del comando PLA~n~n", [])
                             end;
                         {updater, "not_allowed"} ->
                             io:format("~nxxx Jugada ilegal xxx~n~n", [])
@@ -124,14 +153,20 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                             io:format("La partida seleccionada no existe~n", [])
                     end,
                     client_loop(Sock, CmdN + 1, UserName, UPPid);
+                {updater, "lea"}    ->
+                    receive
+                        {updater, "success"} -> io:format("Has dejado de observar la partida~n", []);
+                        {updater, "not_exists"} -> io:format("La partida seleccionada no existe~n", [])
+                    end,
+                    client_loop(Sock, CmdN + 1, UserName, UPPid);
                 {updater, "bye"}    -> 
                     io:format("~n||| ¡Hasta luego! |||~n~n", []),
                     ok = gen_tcp:close(Sock),
                     client_loop(Sock, 0, UserName, UPPid);
-                _                     -> 
+                _                   -> 
                     io:format("Comando no implementado ~n"),
                     client_loop(Sock, CmdN + 1, UserName, UPPid)
-             end
+            end
     end.
 
 

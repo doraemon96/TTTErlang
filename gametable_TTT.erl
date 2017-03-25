@@ -28,7 +28,8 @@ delete_game(GameId) ->
     F = fun() ->
             mnesia:delete({game, GameId})
         end,
-    mnesia:activity(transaction, F).
+    mnesia:activity(transaction, F),
+    ok.
 
 
 %% delete_by_username
@@ -50,7 +51,7 @@ delete_by_username(PSocket, UName) ->
             R = mnesia:match_object({game, '_', '_', '_', '_', '_', '_', '_'}),
             lists:foreach(fun(X) -> mnesia:write(X#game{observers = lists:delete(PSocket, element(8, X))}) end, R)
         end,
-    M = mnesia:activity(transaction, G),
+    mnesia:activity(transaction, G),
     ok.
 
 %% get_game_table
@@ -133,10 +134,17 @@ table_checksuperpos(TableIn, TableOut) ->
     not lists:all(fun(X) -> X end, Fea).
 
 
-%% get_game_status
+%% get_game_tie
+%% TODO
+get_game_tie(GameId) ->
+    Table = get_game_table(GameId),
+    not(lists:any(fun(X) -> X == 0 end, lists:flatten(Table))).
+
+
+%% get_game_won
 %% Muestra si el juego fue ganado o sigue en progreso
-get_game_status(Game) ->
-    Table = get_game_table(Game),
+get_game_won(GameId) ->
+    Table = get_game_table(GameId),
     table_checkrow(Table) or table_checkcol(Table) or table_checkdiagonal(Table).
 
 table_checkrow(Table) ->

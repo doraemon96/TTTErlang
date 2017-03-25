@@ -73,6 +73,7 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
 %% PLA
 %% Dados un juego y una jugada, actualiza el tablero de juego
 %% si dicha jugada es posible.
+%% TODO?: En el segundo if, podria llamarse a get_game_table de gametable.erl
 cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
     F = fun() -> R = mnesia:read({game, GameId}),
                  case R of
@@ -85,16 +86,28 @@ cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
                                 UserName == U1 -> 6;
                                 true -> 4
                             end,
+                        Win = get_game_won(GameId),
+                        Tie = get_game_tie(GameId),
+                        Status = if Win  -> win;
+                                    Tie  -> tie;
+                                    true -> playing
+                                 end,
                         if 
                             SetGameTable -> PSocket ! {pCommand, {pla, success}},
+                                            io:format("SE LO MANDE~n", []),
                                             receive
                                                 {table, Table} -> 
                                                     PSocket ! {table, Table},
+                                                    PSocket ! {status, Status},
                                                     erlang:element(P, G) ! {pCommand, {update, pla, erlang:element(2, G)}},
                                                     erlang:element(P, G) ! {table, Table},
+                                                    erlang:element(P, G) ! {status, Status},
                                                     Observers = erlang:element(8, G),
                                                     lists:foreach(fun(X) -> X ! {pCommand, {update, obs, erlang:element(2, G)}},
-                                                                            X ! {table, Table} end, Observers)
+                                                                            X ! {table, Table},
+                                                                            X ! {status, Status},
+                                                                            X ! {user, UserName}
+                                                                  end, Observers)
                                                     
                                             end;
                             true         -> PSocket ! {pCommand, {pla, not_allowed}}
@@ -124,14 +137,24 @@ cmd_obs(PSocket, GameId) ->
     ok.
 
 %% LEA
-%%
-%% TODO
-cmd_lea() ->
+%% Borra al usuario de la lista de observadores de un juego.
+cmd_lea(PSocket, GameId) ->
+    F = fun() -> R = mnesia:read({game, GameId}),
+                 case R of
+                     []   -> 
+                        PSocket ! {pCommand, {lea, not_exists}};
+                     [G]  -> 
+                        Observers = lists:delete(PSocket, erlang:element(8, G)),
+                        mnesia:write(G#game{observers=Observers}),
+                        PSocket ! {pCommand, {lea, success}}
+                 end
+        end,
+    mnesia:activity(transaction,F),
     ok.
 
 %% BYE
-%% Elimina al usuario de la base de datos y
-%% corta la ejecucion del programa.
+%% Elimina al usuario de la base de datos y corta la ejecucion del 
+%% programa.
 cmd_bye(PSocket, UserName) ->
     delete_by_username(PSocket, UserName),
     PSocket ! {pCommand, bye},
