@@ -1,8 +1,8 @@
 -compile(export_all).
 
 %% create_game
-%%
-%% TODO
+%% Crea un nuevo juego en la tabla de mnesia con un gameId unico
+%% y deja vacia la posicion del segundo jugador.
 create_game(GameId, UName, PSocket) ->
     F = fun() ->
             mnesia:write(#game{gameid=GameId,
@@ -12,8 +12,8 @@ create_game(GameId, UName, PSocket) ->
     mnesia:activity(transaction, F).
 
 %% list_games
-%%
-%% TODO
+%% Hace una query en mnesia por todas las tablas de juego.
+%% TODO: Usar mnesia: y no qlc:
 list_games() ->
     F = fun() -> 
           Handle = qlc:q([P || P <- mnesia:table(game)]),
@@ -23,24 +23,35 @@ list_games() ->
 
 
 %% delete_game
-%%
-%% TODO
+%% Elimina todos los registros en mnesia con el gameId dado.
 delete_game(GameId) ->
     F = fun() ->
             mnesia:delete({game, GameId})
         end,
     mnesia:activity(transaction, F).
 
+
 %% delete_by_username
-%%
-%% TODO
-delete_by_username(UName) ->
+%% Elimina los juegos en los que participa el usuario y lo quita
+%% de la lista de observadores de todos los juegos.
+%% TODO?: enviar un aviso de que el usuario abandono una partida
+delete_by_username(PSocket, UName) ->
+    %% Lo elimina de todas las partidas en las que participa
+    %% TODO: Usar mnesia: y no qlc:
     F = fun() -> 
-          Handle = qlc:q([P#game.gameid || P <- mnesia:table(game), (P#game.user1 == UName) or (P#game.user2 == UName)]),
-          qlc:e(Handle)
+            Handle = qlc:q([P#game.gameid || P <- mnesia:table(game), (P#game.user1 == UName) or (P#game.user2 == UName)]),
+            qlc:e(Handle)
         end,
     L = mnesia:activity(transaction, F),
-    lists:foreach(fun(X) -> delete_game(X) end, L).
+    lists:foreach(fun(X) -> delete_game(X) end, L),
+    %% Lo elimina de todas las listas de observadores
+    %% TODO?: No usar match_object
+    G = fun() -> 
+            R = mnesia:match_object({game, '_', '_', '_', '_', '_', '_', '_'}),
+            lists:foreach(fun(X) -> mnesia:write(X#game{observers = lists:delete(PSocket, element(8, X))}) end, R)
+        end,
+    M = mnesia:activity(transaction, G),
+    ok.
 
 %% get_game_table
 %% Devuelve el tablero de un juego.

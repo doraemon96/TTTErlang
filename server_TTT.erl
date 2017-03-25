@@ -129,7 +129,8 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                            ok = gen_tcp:send(Sock, Default)
             end;
         {tcp_closed, Sock} ->
-            delete_by_username(UserName),
+            %%TODO: Chequear que Sock sea lo correcto a pasar aca.
+            delete_by_username(Sock, UserName),
             delete_username(UserName),
             io:format("El usuario se ha desconectado~n");
         Default           -> 

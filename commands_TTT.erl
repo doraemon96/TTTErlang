@@ -3,8 +3,8 @@
 -include("gametable_TTT.erl").
 
 %% CON
-%%
-%% TODO
+%% Hace un llamado a la base de datos para saber si ya existe
+%% un usuario con su mismo nombre, en caso contrario lo registra.
 cmd_con(PSocket, UserName) ->
     case exists_username(UserName) of
         true  -> 
@@ -17,8 +17,8 @@ cmd_con(PSocket, UserName) ->
 
 
 %% LSG
-%%
-%% TODO
+%% Devuelve todas las partidas listadas en la base de datos
+%% de la forma "GameId Usuario1 Usuario2"
 cmd_lsg(PSocket, CmdId) ->
     GamesList  = list_games(),
     GamesList2 = lists:map(fun({_ , X, Y, _, Z, _, _, _}) -> erlang:integer_to_list(X) ++ " " 
@@ -28,8 +28,8 @@ cmd_lsg(PSocket, CmdId) ->
     ok.
 
 %% NEW
-%%
-%% TODO
+%% Dado un usuario, crea una partida a su nombre con un id
+%% unico. Deja al jugador2 vacio, en espera a que se una.
 cmd_new(PSocket, PlayerId, CmdId) ->
     F = fun() -> 
           Handle = qlc:q([P#game.gameid || P <- mnesia:table(game)]),
@@ -48,8 +48,8 @@ cmd_new(PSocket, PlayerId, CmdId) ->
     
 
 %% ACC
-%%
-%% TODO
+%% Dados un juego y un usuario, intenta unirse en la posicion
+%% del jugador2 si esta esta vacia.
 cmd_acc(PSocket, GameId, UserName, CmdId) ->
     F = fun() -> R = mnesia:read({game, GameId}),
                  case R of
@@ -71,8 +71,8 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
     ok.
 
 %% PLA
-%%
-%% TODO
+%% Dados un juego y una jugada, actualiza el tablero de juego
+%% si dicha jugada es posible.
 cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
     F = fun() -> R = mnesia:read({game, GameId}),
                  case R of
@@ -105,8 +105,9 @@ cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
     ok.  
 
 %% OBS
-%%
-%% TODO
+%% Dado un juego, agrega dicho socket a la lista de observadores
+%% de un juego, los cuales reciben actualizaciones de estado del
+%% mismo pero no pueden realizar jugadas.
 cmd_obs(PSocket, GameId) ->
     F = fun() -> R = mnesia:read({game, GameId}),
                  case R of
@@ -129,9 +130,9 @@ cmd_lea() ->
     ok.
 
 %% BYE
-%%
-%% TODO
+%% Elimina al usuario de la base de datos y
+%% corta la ejecucion del programa.
 cmd_bye(PSocket, UserName) ->
-    delete_by_username(UserName),
+    delete_by_username(PSocket, UserName),
     PSocket ! {pCommand, bye},
     ok.
