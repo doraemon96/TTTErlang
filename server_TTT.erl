@@ -74,7 +74,8 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                            ok = gen_tcp:send(Sock, CmdId),
                                            ok = lists:foreach(fun(X) -> ok = gen_tcp:send(Sock, X) end, Gl),
                                            ok = gen_tcp:send(Sock, "end");
-                {new_ok, ID, CmdId}     -> ok = gen_tcp:send(Sock, "new_ok"),
+                {new_ok, ID, CmdId}     -> io:format("NEW~n",[]),
+                                           ok = gen_tcp:send(Sock, "new_ok"),
                                            ok = gen_tcp:send(Sock, erlang:integer_to_list(ID));
                 {acc, AccMsg, CmdId}    -> ok = gen_tcp:send(Sock, "acc"),
                                            case AccMsg of
@@ -87,6 +88,7 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                               not_acc    -> ok = gen_tcp:send(Sock, "not_accepted")
                                            end;
                 {pla, Result}           -> ok = gen_tcp:send(Sock, "pla"),
+                                           io:format("PLA~n",[]),
                                            case Result of 
                                             success     -> 
                                                 ok = gen_tcp:send(Sock, "success"),

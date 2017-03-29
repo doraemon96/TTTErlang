@@ -61,7 +61,6 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
                                            PSocket ! {gameid, GameId},
                                            mnesia:write(G#game{user2=UserName,
                                                                sock2=PSocket}),
-                                           io:format("~p~n",[erlang:element(4,G)]),
                                            erlang:element(4, G) ! {pCommand, {update, acc, erlang:element(2, G)}};
                             _           -> PSocket ! {pCommand, {acc, not_acc, CmdId}}
                         end
@@ -81,14 +80,14 @@ cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
                         PSocket ! {pCommand, {pla, not_allowed}};
                     [G] ->
                         SetGameTable = set_game_table(self(), GameId, make_play(UserName, GameId, Play), UserName),
-                        {U1, U2} = get_game_players(GameId), 
+                        {U1, U2}     = get_game_players(GameId), 
                         P = if 
                                 UserName == U1 -> 6;
                                 true -> 4
                             end,
                         Win = get_game_won(GameId),
                         Tie = get_game_tie(GameId),
-                        Status = if Win  -> win;
+                        Status = if Win  -> won;
                                     Tie  -> tie;
                                     true -> playing
                                  end,

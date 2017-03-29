@@ -140,25 +140,24 @@ get_game_tie(GameId) ->
     Table = get_game_table(GameId),
     not(lists:any(fun(X) -> X == 0 end, lists:flatten(Table))).
 
-
 %% get_game_won
 %% Muestra si el juego fue ganado o sigue en progreso
 get_game_won(GameId) ->
     Table = get_game_table(GameId),
-    table_checkrow(Table) or table_checkcol(Table) or table_checkdiagonal(Table).
+    (table_checkrow(Table) or table_checkcol(Table) or table_checkdiagonal(Table)) and (not (Table == [[0,0,0],[0,0,0],[0,0,0]])).
 
 table_checkrow(Table) ->
-    Fea = lists:foreach(fun(X) -> (lists:nth(1,X) == lists:nth(2,X)) and (lists:nth(2,X) == lists:nth(3,X)) end, Table),
+    Fea = lists:map(fun(X) -> (lists:nth(1,X) == lists:nth(2,X)) and (lists:nth(2,X) == lists:nth(3,X)) end, Table),
     lists:any(fun(X) -> X end, Fea).
 
 table_checkcol(Table) ->
-    Zip = lists:zip(lists:nth(1,Table), lists:nth(2,Table), lists:nth(3,Table)),
-    Fea = lists:foreach(fun(X) -> (element(1,X) == element(2,X)) and (element(2,X) == element(3,X)) end),
+    Zip = lists:zip3(lists:nth(1,Table), lists:nth(2,Table), lists:nth(3,Table)),
+    Fea = lists:map(fun(X) -> (element(1,X) == element(2,X)) and (element(2,X) == element(3,X)) end, Zip),
     lists:any(fun(X) -> X end, Fea).
 
 table_checkdiagonal(Table) ->
-    Diag1 = (element(1, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(3, lists:nth(3,Table))),
-    Diag2 = (element(3, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(1, lists:nth(3,Table))),
+    Diag1 = (lists:nth(1, lists:nth(1,Table)) == lists:nth(2, lists:nth(2,Table))) and (lists:nth(2, lists:nth(2,Table)) == lists:nth(3, lists:nth(3,Table))),
+    Diag2 = (lists:nth(3, lists:nth(1,Table)) == lists:nth(2, lists:nth(2,Table))) and (lists:nth(2, lists:nth(2,Table)) == lists:nth(1, lists:nth(3,Table))),
     Diag1 or Diag2.
 
 %% NICO NO PUEDE ESCRIBIR NINGUN COMENTARIO ACA
