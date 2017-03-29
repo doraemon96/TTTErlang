@@ -140,11 +140,22 @@ get_game_tie(GameId) ->
     Table = get_game_table(GameId),
     not(lists:any(fun(X) -> X == 0 end, lists:flatten(Table))).
 
+is_zero(Table) ->
+    Zip   = lists:zip3(lists:nth(1,Table), lists:nth(2,Table), lists:nth(3,Table)),
+    Diag1 = (lists:nth(1,(lists:nth(1, Table))) == 0) 
+            and (lists:nth(1, lists:nth(1,Table)) == lists:nth(2, lists:nth(2,Table))) and (lists:nth(2, lists:nth(2,Table)) == lists:nth(3, lists:nth(3,Table))),
+    Diag2 = (lists:nth(3,(lists:nth(1, Table))) == 0)
+            and (lists:nth(3, lists:nth(1,Table)) == lists:nth(2, lists:nth(2,Table))) and (lists:nth(2, lists:nth(2,Table)) == lists:nth(1, lists:nth(3,Table))),
+    lists:any(fun(X) -> X == [0,0,0] end, Table) 
+    or lists:any(fun(X) -> X == {0,0,0} end, Zip) 
+    or Diag1 
+    or Diag2.
+
 %% get_game_won
 %% Muestra si el juego fue ganado o sigue en progreso
 get_game_won(GameId) ->
     Table = get_game_table(GameId),
-    (table_checkrow(Table) or table_checkcol(Table) or table_checkdiagonal(Table)) and (not (Table == [[0,0,0],[0,0,0],[0,0,0]])).
+    (table_checkrow(Table) or table_checkcol(Table) or table_checkdiagonal(Table)) and (not (is_zero(Table))).
 
 table_checkrow(Table) ->
     Fea = lists:map(fun(X) -> (lists:nth(1,X) == lists:nth(2,X)) and (lists:nth(2,X) == lists:nth(3,X)) end, Table),
