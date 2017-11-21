@@ -23,7 +23,7 @@ start_server(Port) ->
     NameBalance     = "balance" ++ integer_to_list(Number),
     global:register_name(NameBalance, PidBalance),
 
-    PidDispatcher = spawn_link(?MODULE, dispatcher, [LSock, PidBalance]),
+    PidDispatcher = spawn_link(?MODULE, dispatcher, [LSock, PidBalance, 0]),
 
     process_flag(trap_exit, true),
 
@@ -41,33 +41,45 @@ start_server(Port) ->
 
     ok.
 
+%% Se pasa como argumento el nombre de algún nodo que ya esté trabajando
+%% y el puerto a donde va a escuchar
+start_server(Port, Server) ->
+    net_kernel:connect_node(Server),
+    receive after 1000 -> ok end,
+    start_server(Port),
+    ok.
+
 %% dispatcher
 %% Aceptamos la conexión, y partir de allí creamos un nuevo proceso psocket.
-dispatcher(LSock, PidBalance) ->
+dispatcher(LSock, PidBalance, Number) ->
     {ok, Sock} = gen_tcp:accept(LSock),
-    Pid        = spawn(?MODULE, pSocket, [Sock, PidBalance]),
+    Pid        = spawn(?MODULE, pSocket, [Sock, PidBalance, Number]),
     ok         = gen_tcp:controlling_process(Sock, Pid),
     Pid ! ok, 
-    dispatcher(LSock, PidBalance).
+    dispatcher(LSock, PidBalance, Number + 1).
 
-pSocket(Sock, PidBalance) ->
+pSocket(Sock, PidBalance, Number) ->
+    LoopName = "loop" ++ integer_to_list(Number) ++ atom_to_list(node()),
     receive ok -> ok end,
-    ok = inet:setopts(Sock, [{active, true}]),
-    pSocket_loop(Sock, PidBalance, nil).
+    ok  = inet:setopts(Sock, [{active, true}]),
+    Pid = spawn(?MODULE, pSocket_loop, [Sock, PidBalance, nil, LoopName]),
+    io:format(LoopName),
+    global:register_name(LoopName, Pid),
+    ok.
 
-pSocket_loop(Sock, PidBalance, UserName) ->
+pSocket_loop(Sock, PidBalance, UserName, LoopName) ->
     receive 
         {tcp, Sock, Data} ->
             PidBalance ! {pSocket, self()},
             receive
                 {pBalance, Node} ->
-                    spawn(Node, ?MODULE, pCommand, [Data, UserName, nil, self()]);
+                    spawn(Node, ?MODULE, pCommand, [Data, UserName, nil, {LoopName, node()}]);
                 _ -> {error, not_supported}
             end;
         {pCommand, Msg}  ->
             case Msg of
                 {valid_username, UName} -> ok = gen_tcp:send(Sock, "valid_username"),
-                                           pSocket_loop(Sock, PidBalance, UName);
+                                           pSocket_loop(Sock, PidBalance, UName, LoopName);
                 invalid_username        -> ok = gen_tcp:send(Sock, "invalid_username");
                 {lsg, Gl, CmdId}        -> ok = gen_tcp:send(Sock, "lsg"),
                                            ok = gen_tcp:send(Sock, "cmdid"),
@@ -153,7 +165,7 @@ pSocket_loop(Sock, PidBalance, UserName) ->
             io:format("Error en el mensaje ~p~n", [Default]),
             ok = gen_tcp:send(Sock, "wrong_command")
     end,
-    pSocket_loop(Sock, PidBalance, UserName). 
+    pSocket_loop(Sock, PidBalance, UserName, LoopName). 
 
    
 %% pBalance

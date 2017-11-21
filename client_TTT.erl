@@ -13,9 +13,10 @@ client(Host) ->
 username_loop(Sock) ->
     io:format("Ingrese nombre de usuario: "),
     UserName = string:strip(io:get_line(""), right, $\n),
-    ok       = gen_tcp:send(Sock, "CON "++UserName),
+    ok       = gen_tcp:send(Sock, "CON " ++ UserName),
     receive
         {tcp, Sock, "valid_username"} -> 
+            io:format("Okus!~n"),
             {username, UserName};
         {tcp, Sock, "invalid_username"} ->
             io:format("Usuario en uso.~n"),

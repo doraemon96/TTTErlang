@@ -29,7 +29,7 @@ init(Port, Node) ->
     mnesia:change_table_copy_type(schema, node(), disc_copies),
     mnesia:add_table_copy(user, node(), disc_copies),
     mnesia:add_table_copy(game, node(), disc_copies),
-    spawn(?MODULE, start_server, [Port]),
+    spawn(?MODULE, start_server, [Port, Node]),
     ok.
 
 %% *************************************************************** %%
