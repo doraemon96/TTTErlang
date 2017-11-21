@@ -11,8 +11,6 @@
 %% start_server
 %% Se inician todos los procesos inherentes al server 
 start_server(Port) ->
-    Number = erlang:length(nodes()),
-
     {ok, LSock} = gen_tcp:listen(Port, [list, {packet, 4}, {active, true}, {reuseaddr, true}]),
 
     %% Spawneamos y registramos el nombre de los procesos pBalance 
@@ -20,7 +18,7 @@ start_server(Port) ->
     {_, Reductions} = statistics(reductions),
     PidStat         = spawn_link(?MODULE, pStat, []),
     PidBalance      = spawn_link(?MODULE, pBalance, [Queue, Reductions, node()]),
-    NameBalance     = "balance" ++ integer_to_list(Number),
+    NameBalance     = "balance" ++ atom_to_list(node()),
     global:register_name(NameBalance, PidBalance),
 
     PidDispatcher = spawn_link(?MODULE, dispatcher, [LSock, PidBalance]),
@@ -39,6 +37,14 @@ start_server(Port) ->
 
     spawn(?MODULE, start_server, [Port]),
 
+    ok.
+
+%% Se pasa como argumento el nombre de algún nodo que ya esté trabajando
+%% %% y el puerto a donde va a escuchar
+start_server(Port, Server) ->
+    net_kernel:connect_node(Server),
+    receive after 1000 -> ok end,
+    start_server(Port),
     ok.
 
 %% dispatcher
