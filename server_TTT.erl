@@ -59,11 +59,11 @@ dispatcher(LSock, PidBalance, Number) ->
     dispatcher(LSock, PidBalance, Number + 1).
 
 pSocket(Sock, PidBalance, Number) ->
-    LoopName = "loop" ++ integer_to_list(Number) ++ atom_to_list(node()),
     receive ok -> ok end,
     ok  = inet:setopts(Sock, [{active, true}]),
+    LoopName = "loop" ++ integer_to_list(Number) ++ atom_to_list(node()),
     Pid = spawn(?MODULE, pSocket_loop, [Sock, PidBalance, nil, LoopName]),
-    io:format(LoopName),
+    %Borrar esto -> io:format(LoopName),
     global:register_name(LoopName, Pid),
     ok.
 
@@ -220,7 +220,7 @@ pStat() ->
 pCommand(Command, PlayerId, GameId, PSocket) ->
     io:format("~p~n",[string:tokens(Command," ")]),
     case string:tokens(Command," ") of
-        ["CON", UserName]         -> cmd_con(PSocket, UserName);
+        ["CON", UserName]         -> io:format("COOON!~n"), cmd_con(PSocket, UserName);
         ["LSG", CmdId]            -> cmd_lsg(PSocket, CmdId);
         ["NEW", CmdId]            -> cmd_new(PSocket, PlayerId, CmdId);
         ["ACC", GId, CmdId]       -> cmd_acc(PSocket, erlang:list_to_integer(GId), PlayerId, CmdId);

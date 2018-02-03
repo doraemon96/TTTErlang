@@ -2,7 +2,7 @@
 -compile(export_all).
 
 client(Host) ->
-    {ok , Sock} = gen_tcp:connect(Host, 8000, [list, {packet, 4}]),
+    {ok, Sock} = gen_tcp:connect(Host, 8000, [list, {packet, 4}]),
     case username_loop(Sock) of
         {username, UserName} -> 
             client_loop(Sock, 1, UserName, self());
@@ -16,7 +16,6 @@ username_loop(Sock) ->
     ok       = gen_tcp:send(Sock, "CON " ++ UserName),
     receive
         {tcp, Sock, "valid_username"} -> 
-            io:format("Okus!~n"),
             {username, UserName};
         {tcp, Sock, "invalid_username"} ->
             io:format("Usuario en uso.~n"),
