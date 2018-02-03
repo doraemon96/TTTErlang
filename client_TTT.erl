@@ -16,6 +16,9 @@ username_loop(Sock) ->
     ok       = gen_tcp:send(Sock, "CON "++UserName),
     receive
         {tcp, Sock, "valid_username"} -> 
+            io:format("~n +++++++++++++++++++++++++++++++++++++++ ~n"),
+            io:format("| Bienvenido, para ayuda ingrese HELP | ~n"),
+            io:format("+++++++++++++++++++++++++++++++++++++++ ~n ~n"),
             {username, UserName};
         {tcp, Sock, "invalid_username"} ->
             io:format("Usuario en uso.~n"),
@@ -128,6 +131,19 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                     io:format("~n||| ¡Hasta luego! |||~n~n", []),
                     ok = gen_tcp:close(Sock),
                     client_loop(Sock, 0, UserName, UPPid);
+                {updater, "help"} ->
+                    io:format("~nComandos permitidos: ~n"),
+                    io:format("NEW cmdid - Crea un nuevo juego ~n"),
+                    io:format("ACC cmdid juegoid - Acepta el juego identificado por juegoid ~n"),
+                    io:format("LSG cmdid - Lista los juegos disponibles. Estos son los que estan en" 
+                              ++ " desarollo y los que estan esperando un contrincante ~n"),
+                    io:format("PLA cmdid juegoid jugada - Realiza una jugada" 
+                              ++ " en el juego identificado por juegoid ~n"),
+                    io:format("OBS cmdid juegoid - Pide observar un juego ~n"),
+                    io:format("LEA cmdid juegoid - Deja de observar un juego ~n"),
+                    io:format("BYE - Termina la conexion. Abandona todos los juegos en los"
+                              ++ " que se este participando ~n ~n"),
+                    client_loop(Sock, CmdN + 1, UserName, UPPid);
                 _                     -> 
                     io:format("Comando no implementado ~n"),
                     client_loop(Sock, CmdN + 1, UserName, UPPid)

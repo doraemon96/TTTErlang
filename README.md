@@ -27,3 +27,8 @@ y acto seguido se ejecuta client("ip_host").
 #Cliente
 Generamos automáticamente el CmdId como {username, nro}.
 
+#Denu's comments
+Agrego el comando de ayuda para el usuario que logra conectarse a algún server.
+
+Cuando un usuario se desconecta su username aparece del lado del server.
+

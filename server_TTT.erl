@@ -131,6 +131,7 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                                       end;
                                                 _   -> error_not_implemented
                                            end;
+                help                    -> ok = gen_tcp:send(Sock, "help");
                 Default                 -> io:format("Error en mensaje de pCommand ~p ~n", [Default]),
                                            ok = gen_tcp:send(Sock, Default)
             end;
@@ -138,7 +139,7 @@ pSocket_loop(Sock, PidBalance, UserName) ->
             %%TODO: Chequear que Sock sea lo correcto a pasar aca.
             delete_by_username(Sock, UserName),
             delete_username(UserName),
-            io:format("El usuario se ha desconectado~n");
+            io:format("El usuario " ++ UserName ++  " se ha desconectado~n");
         Default           -> 
             io:format("Error en el mensaje ~p~n", [Default]),
             ok = gen_tcp:send(Sock, "wrong_command")
@@ -205,6 +206,13 @@ pCommand(Command, PlayerId, GameId, PSocket) ->
         ["PLA", GId, Play, CmdId] -> cmd_pla(PSocket, erlang:list_to_integer(GId), Play, PlayerId, CmdId);
         ["OBS", GId, CmdId]       -> cmd_obs(PSocket, erlang:list_to_integer(GId));
 %        ["LEA", CmdId, GameId]       ->
-        ["BYE", CmdId]                   -> cmd_bye(PSocket, PlayerId); 
+        ["BYE", CmdId]            -> cmd_bye(PSocket, PlayerId); 
+        ["HELP", UserName]        -> cmd_help(PSocket);
         _ -> PSocket ! "command_not_implemented"
     end.
+
+
+
+
+
+

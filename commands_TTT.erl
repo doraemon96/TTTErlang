@@ -136,3 +136,9 @@ cmd_bye(PSocket, UserName) ->
     delete_by_username(PSocket, UserName),
     PSocket ! {pCommand, bye},
     ok.
+
+%% HELP
+%% Muestra la ayuda
+cmd_help(PSocket) ->
+    PSocket ! {pCommand, help},
+    ok.
