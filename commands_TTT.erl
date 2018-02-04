@@ -74,12 +74,13 @@ cmd_acc(PSocket, GameId, UserName, CmdId) ->
 %% Dados un juego y una jugada, actualiza el tablero de juego
 %% si dicha jugada es posible.
 cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
+    MakePlay = make_play(UserName, GameId, Play),
     F = fun() -> R = mnesia:read({game, GameId}),
                  case R of
                     [] -> 
                         PSocket ! {pCommand, {pla, not_allowed}};
                     [G] ->
-                        SetGameTable = set_game_table(self(), GameId, make_play(UserName, GameId, Play), UserName),
+                        SetGameTable = set_game_table(self(), GameId, MakePlay, UserName),
                         {U1, U2} = get_game_players(GameId), 
                         P = if 
                                 UserName == U1 -> 6;
@@ -101,7 +102,9 @@ cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
                         end
                  end
         end,
-    mnesia:activity(transaction, F),
+    if MakePlay == error -> PSocket ! {pCommand, {pla, not_allowed}};
+       true -> mnesia:activity(transaction, F)
+    end,
     ok.  
 
 %% OBS

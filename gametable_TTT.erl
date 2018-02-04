@@ -163,31 +163,31 @@ make_play(UserName, GameId, Play) ->
     [H | T]  = Play,
     case H of
         97  -> 
-            X2 = erlang:list_to_integer(T),
+            X2 = get_number(T),
             B  = (X2 < 4) and (X2 > 0),
             if B -> L2 = lists:nth(2, OldTable),
                     L3 = lists:nth(3, OldTable),
                     L1 = set_nth_list(lists:nth(1, OldTable), X2, Num),
                     [L1, L2, L3];
-               true -> error1
+               true -> error
             end;
         98  -> 
-            X2 = erlang:list_to_integer(T),
+            X2 = get_number(T),
             B  = (X2 < 4) and (X2 > 0),
             if B -> L1 = lists:nth(1, OldTable),
                     L3 = lists:nth(3, OldTable),
                     L2 = set_nth_list(lists:nth(2, OldTable), X2, Num),
                     [L1, L2, L3];
-               true -> error2
+               true -> error
             end;
         99  -> 
-            X2 = erlang:list_to_integer(T),
+            X2 = get_number(T),
             B  = (X2 < 4) and (X2 > 0),
             if B -> L1 = lists:nth(1, OldTable),
                     L2 = lists:nth(2, OldTable),
                     L3 = set_nth_list(lists:nth(3, OldTable), X2, Num),
                     [L1, L2, L3];
-               true -> error3
+               true -> error
             end;
         _ -> 
             error
@@ -195,6 +195,7 @@ make_play(UserName, GameId, Play) ->
         %"b" ++ X -> list_to_integer(X)
         %"c" ++ X -> list_to_integer(X)
 
+%% Funcion auxiliar de make_play
 set_nth_list([H | T], Number, Element) ->
     case Number of
         1 -> 
@@ -202,5 +203,19 @@ set_nth_list([H | T], Number, Element) ->
         _ -> 
             [H] ++ set_nth_list(T, Number - 1, Element)
     end.
-        
-    
+       
+%% Funcion auxiliar de make_play, para ver que la jugada
+%% tenga el formato indicado
+get_number(Tail) ->
+    case Tail of
+        []      -> error;
+        [H | T] ->
+            try erlang:list_to_integer([H]) of  
+                X -> 
+                    if T == [] -> X;
+                       true -> error
+                    end
+            catch
+                _:_ -> error
+            end
+    end.    

@@ -133,14 +133,17 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                     client_loop(Sock, 0, UserName, UPPid);
                 {updater, "help"} ->
                     io:format("~nComandos permitidos: ~n"),
-                    io:format("NEW cmdid - Crea un nuevo juego ~n"),
-                    io:format("ACC cmdid juegoid - Acepta el juego identificado por juegoid ~n"),
-                    io:format("LSG cmdid - Lista los juegos disponibles. Estos son los que estan en" 
+                    io:format("NEW - Crea un nuevo juego ~n"),
+                    io:format("ACC juegoid - Acepta el juego identificado por juegoid ~n"),
+                    io:format("LSG - Lista los juegos disponibles. Estos son los que estan en" 
                               ++ " desarollo y los que estan esperando un contrincante ~n"),
-                    io:format("PLA cmdid juegoid jugada - Realiza una jugada" 
-                              ++ " en el juego identificado por juegoid ~n"),
-                    io:format("OBS cmdid juegoid - Pide observar un juego ~n"),
-                    io:format("LEA cmdid juegoid - Deja de observar un juego ~n"),
+                    io:format("PLA juegoid jugada - Realiza una jugada" 
+                              ++ " en el juego identificado por juegoid"
+                              ++ ". En la jugada debe indicarse primero la fila"
+                              ++ " (con una letra minuscula de la a a la c), y luego la columna"
+                              ++ " (con un numero del 1 al 3) ~n"),
+                    io:format("OBS juegoid - Pide observar un juego ~n"),
+                    io:format("LEA juegoid - Deja de observar un juego ~n"),
                     io:format("BYE - Termina la conexion. Abandona todos los juegos en los"
                               ++ " que se este participando ~n ~n"),
                     client_loop(Sock, CmdN + 1, UserName, UPPid);
@@ -169,7 +172,7 @@ lsg_loop() ->
     ok.
 
 %% print_table
-%% Funcion preety-print para un estado de la tabla de juego.
+%% Funcion pretty-print para un estado de la tabla de juego.
 print_table(Table) ->
     F  = fun(X) -> 
             case X of
