@@ -101,6 +101,7 @@ pSocket_loop(Sock, PidBalance, UserName) ->
                                                         ok = gen_tcp:send(Sock, Table)
                                                 end;
                                             not_allowed -> ok = gen_tcp:send(Sock, "not_allowed");
+                                            game_over   -> ok = gen_tcp:send(Sock, "game_over");
                                             _           -> io:format("Error en el mensaje PLA ~n", [])
                                            end;
                 {obs, Result}           -> ok = gen_tcp:send(Sock, "obs"),

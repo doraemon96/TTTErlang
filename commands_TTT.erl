@@ -96,14 +96,17 @@ cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
                                                     Observers = erlang:element(8, G),
                                                     lists:foreach(fun(X) -> X ! {pCommand, {update, obs, erlang:element(2, G)}},
                                                                             X ! {table, Table} end, Observers)
-                                                    
                                             end;
                             true         -> PSocket ! {pCommand, {pla, not_allowed}}
                         end
                  end
         end,
-    if MakePlay == error -> PSocket ! {pCommand, {pla, not_allowed}};
-       true -> mnesia:activity(transaction, F)
+    case MakePlay of
+        error     -> PSocket ! {pCommand, {pla, not_allowed}};
+        game_over -> 
+            PSocket ! {pCommand, {pla, game_over}},
+            PSocket ! {GameResult};
+        _         -> mnesia:activity(transaction, F)
     end,
     ok.  
 

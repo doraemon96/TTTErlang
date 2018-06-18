@@ -112,7 +112,9 @@ client_loop(Sock, CmdN, UserName, UPPid) ->
                                         io:format("~n*** Error en la recepción de la tabla luego del comando PLA~n~n", [])
                             end;
                         {updater, "not_allowed"} ->
-                            io:format("~nxxx Jugada ilegal xxx~n~n", [])
+                            io:format("~nxxx Jugada ilegal xxx~n~n", []);
+                        {updater, "game_over"} ->
+                            io:format("~nxxx El juego terminó xxx~n~n", [])
                     end,
                     client_loop(Sock, CmdN + 1, UserName, UPPid);    
                 {updater, "obs"}    ->

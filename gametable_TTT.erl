@@ -133,25 +133,47 @@ table_checksuperpos(TableIn, TableOut) ->
     not lists:all(fun(X) -> X end, Fea).
 
 
-%% get_game_status
-%% Muestra si el juego fue ganado o sigue en progreso
-get_game_status(Game) ->
-    Table = get_game_table(Game),
+%% is_game_won
+%% Muestra si el juego fue ganado
+is_game_won(Table) ->
     table_checkrow(Table) or table_checkcol(Table) or table_checkdiagonal(Table).
 
 table_checkrow(Table) ->
-    Fea = lists:foreach(fun(X) -> (lists:nth(1,X) == lists:nth(2,X)) and (lists:nth(2,X) == lists:nth(3,X)) end, Table),
+    Fea = lists:map(fun(X) -> ((lists:nth(1,X)) == lists:nth(2,X)) 
+                          and ((lists:nth(2,X)) == lists:nth(3,X)) 
+                          and (lists:nth(1,X) /= 0) %evita falsos positivos cuando el juego recien comienza
+                    end, Table), 
     lists:any(fun(X) -> X end, Fea).
 
 table_checkcol(Table) ->
-    Zip = lists:zip(lists:nth(1,Table), lists:nth(2,Table), lists:nth(3,Table)),
-    Fea = lists:foreach(fun(X) -> (element(1,X) == element(2,X)) and (element(2,X) == element(3,X)) end),
+    Zip = lists:zip3(lists:nth(1,Table), lists:nth(2,Table), lists:nth(3,Table)),
+    Fea = lists:map(fun(X) -> (element(1,X) == element(2,X)) 
+                          and (element(2,X) == element(3,X))  
+                          and (element(1,X) /= 0)
+                    end, Zip),
     lists:any(fun(X) -> X end, Fea).
 
 table_checkdiagonal(Table) ->
-    Diag1 = (element(1, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(3, lists:nth(3,Table))),
-    Diag2 = (element(3, lists:nth(1,Table)) == element(2, lists:nth(2,Table))) and (element(2, lists:nth(2,Table)) == element(1, lists:nth(3,Table))),
+    Diag1 = (lists:nth(1, lists:nth(1,Table)) == lists:nth(2, lists:nth(2,Table))) 
+        and (lists:nth(2, lists:nth(2,Table)) == lists:nth(3, lists:nth(3,Table)))
+        and (lists:nth(1, lists:nth(1,Table)) /= 0),
+    Diag2 = (lists:nth(3, lists:nth(1,Table)) == lists:nth(2, lists:nth(2,Table))) 
+        and (lists:nth(2, lists:nth(2,Table)) == lists:nth(1, lists:nth(3,Table)))
+        and (lists:nth(3, lists:nth(1,Table)) /= 0),
     Diag1 or Diag2.
+
+is_game_tie(Table) ->
+    F = fun(X) ->
+        case X of
+            0 -> true;
+            _ -> false
+        end
+    end,
+    not lists:any(fun(X) -> X end, (lists:map(F, lists:flatten(Table)))).
+
+is_game_over(Table) ->
+    is_game_tie(Table) or is_game_won(Table).
+
 
 %% NICO NO PUEDE ESCRIBIR NINGUN COMENTARIO ACA
 %% YOU HAVE NO POWER HERE!
@@ -161,36 +183,41 @@ make_play(UserName, GameId, Play) ->
     {U1, U2} = get_game_players(GameId),
     Num      = if UserName == U1 -> 1; true -> 2 end,
     [H | T]  = Play,
-    case H of
-        97  -> 
-            X2 = get_number(T),
-            B  = (X2 < 4) and (X2 > 0),
-            if B -> L2 = lists:nth(2, OldTable),
-                    L3 = lists:nth(3, OldTable),
-                    L1 = set_nth_list(lists:nth(1, OldTable), X2, Num),
-                    [L1, L2, L3];
-               true -> error
-            end;
-        98  -> 
-            X2 = get_number(T),
-            B  = (X2 < 4) and (X2 > 0),
-            if B -> L1 = lists:nth(1, OldTable),
-                    L3 = lists:nth(3, OldTable),
-                    L2 = set_nth_list(lists:nth(2, OldTable), X2, Num),
-                    [L1, L2, L3];
-               true -> error
-            end;
-        99  -> 
-            X2 = get_number(T),
-            B  = (X2 < 4) and (X2 > 0),
-            if B -> L1 = lists:nth(1, OldTable),
-                    L2 = lists:nth(2, OldTable),
-                    L3 = set_nth_list(lists:nth(3, OldTable), X2, Num),
-                    [L1, L2, L3];
-               true -> error
-            end;
-        _ -> 
-            error
+    IsGameOver = is_game_over(OldTable),
+    case IsGameOver of
+        true -> game_over;
+        _    ->
+            case H of
+                97  -> 
+                    X2 = get_number(T),
+                    B  = (X2 < 4) and (X2 > 0),
+                    if B -> L2 = lists:nth(2, OldTable),
+                            L3 = lists:nth(3, OldTable),
+                            L1 = set_nth_list(lists:nth(1, OldTable), X2, Num),
+                            [L1, L2, L3];
+                       true -> error
+                    end;
+                98  -> 
+                    X2 = get_number(T),
+                    B  = (X2 < 4) and (X2 > 0),
+                    if B -> L1 = lists:nth(1, OldTable),
+                            L3 = lists:nth(3, OldTable),
+                            L2 = set_nth_list(lists:nth(2, OldTable), X2, Num),
+                            [L1, L2, L3];
+                       true -> error
+                    end;
+                99  -> 
+                    X2 = get_number(T),
+                    B  = (X2 < 4) and (X2 > 0),
+                    if B -> L1 = lists:nth(1, OldTable),
+                            L2 = lists:nth(2, OldTable),
+                            L3 = set_nth_list(lists:nth(3, OldTable), X2, Num),
+                            [L1, L2, L3];
+                       true -> error
+                    end;
+                _ -> 
+                    error
+            end
     end.
         %"b" ++ X -> list_to_integer(X)
         %"c" ++ X -> list_to_integer(X)
