@@ -105,6 +105,9 @@ cmd_pla(PSocket, GameId, Play, UserName, CmdId) ->
         error     -> PSocket ! {pCommand, {pla, not_allowed}};
         game_over -> 
             PSocket ! {pCommand, {pla, game_over}},
+            %% TODO: aca no hay que mandar una variable como es GameResult,
+            %% sino un atom. Además hay que agregar en el server la opción
+            %% del mensajito que mandemos
             PSocket ! {GameResult};
         _         -> mnesia:activity(transaction, F)
     end,
